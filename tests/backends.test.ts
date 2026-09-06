@@ -4,8 +4,12 @@ import { getBackendModel } from "../src/backends";
 import { getCodexModel, thinkingToEffort } from "../src/backends/codex";
 import { getGrokModel } from "../src/backends/grok";
 import { resolveCredential } from "../src/credentials/resolver";
+import type * as resolverModule from "../src/credentials/resolver";
 
-vi.mock("../src/credentials/resolver", () => ({ resolveCredential: vi.fn() }));
+vi.mock("../src/credentials/resolver", async (importOriginal) => {
+  const actual = await importOriginal<typeof resolverModule>();
+  return { ...actual, resolveCredential: vi.fn() };
+});
 vi.mock("@ai-sdk/openai", () => ({ createOpenAI: vi.fn() }));
 
 const resolveCredentialMock = vi.mocked(resolveCredential);

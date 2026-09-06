@@ -9,6 +9,9 @@ export type BackendCredential =
 const isExpired = (expiresAt: number | undefined): boolean =>
   expiresAt !== undefined && expiresAt <= Date.now() + 60_000;
 
+/** Env prefix for a provider: uppercased with "-" normalized to "_" (e.g. "opencode-go" → "OPENCODE_GO"). */
+export const envPrefix = (provider: string): string => provider.toUpperCase().replace(/-/g, "_");
+
 /**
  * Resolve credentials for a backend provider.
  * - "codex": Codex CLI auth file (env overrides for path/token available)
@@ -40,10 +43,10 @@ export const resolveCredential = async (provider: string): Promise<BackendCreden
     }
     return { kind: "grok", creds };
   }
-  const key = process.env[`${provider.toUpperCase()}_API_KEY`];
+  const key = process.env[`${envPrefix(provider)}_API_KEY`];
   if (!key) {
     throw new Error(
-      `No credential for provider "${provider}". Set ${provider.toUpperCase()}_API_KEY.`,
+      `No credential for provider "${provider}". Set ${envPrefix(provider)}_API_KEY.`,
     );
   }
   return { kind: "apiKey", key };

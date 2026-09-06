@@ -1,7 +1,7 @@
 import type { LanguageModel } from "ai";
 import { getCodexModel } from "./codex";
 import { getGrokModel } from "./grok";
-import { resolveCredential } from "../credentials/resolver";
+import { envPrefix, resolveCredential } from "../credentials/resolver";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { ThinkingLevel } from "../types";
 
@@ -34,7 +34,7 @@ export const getBackendModel = async (
   }
   const resolved = await resolveCredential(provider);
   if (resolved.kind !== "apiKey") throw new Error(`Unsupported credential for "${provider}".`);
-  const baseURL = process.env[`${provider.toUpperCase()}_BASE_URL`];
+  const baseURL = process.env[`${envPrefix(provider)}_BASE_URL`];
   const instance = createOpenAI({
     ...(baseURL ? { baseURL } : {}),
     apiKey: resolved.key,

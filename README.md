@@ -46,7 +46,7 @@ opencode (openai-compatible) ──────┘
 | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `codex`  | Codex CLI auth: `$CODEX_HOME/auth.json` (default `~/.codex/auth.json`), or `LLM_ROUTER_CODEX_TOKEN` + `LLM_ROUTER_CODEX_ACCOUNT_ID` env |
 | `grok`   | Grok CLI auth: `$GROK_HOME/auth.json` (default `~/.grok/auth.json`), or `LLM_ROUTER_GROK_KEY` env                                       |
-| others   | `<PROVIDER>_API_KEY` env (+ optional `<PROVIDER>_BASE_URL`)                                                                             |
+| others   | `<PROVIDER>_API_KEY` env (+ optional `<PROVIDER>_BASE_URL`; uppercase, `-` → `_`, e.g. `opencode-go` → `OPENCODE_GO_API_KEY`)           |
 
 CLI auth files are re-read on every request, so CLI-side OAuth refreshes are
 picked up automatically. Expired tokens return an error asking for `codex login`

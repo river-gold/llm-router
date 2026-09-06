@@ -6,7 +6,7 @@ import {
   readCodexCredentials,
 } from "../src/credentials/codexCli";
 import { grokAuthPath, readGrokCredentials } from "../src/credentials/grokCli";
-import { resolveCredential } from "../src/credentials/resolver";
+import { envPrefix, resolveCredential } from "../src/credentials/resolver";
 
 const store = new Map<string, unknown>();
 let readFails = false;
@@ -189,5 +189,13 @@ describe("resolveCredential", () => {
     await expect(resolveCredential("openai")).rejects.toThrow("OPENAI_API_KEY");
     process.env.OPENAI_API_KEY = "sk-x";
     expect(await resolveCredential("openai")).toEqual({ kind: "apiKey", key: "sk-x" });
+  });
+
+  it("normalizes hyphens in provider names to underscores", async () => {
+    expect(envPrefix("opencode-go")).toBe("OPENCODE_GO");
+    await expect(resolveCredential("opencode-go")).rejects.toThrow("OPENCODE_GO_API_KEY");
+    process.env.OPENCODE_GO_API_KEY = "sk-y";
+    expect(await resolveCredential("opencode-go")).toEqual({ kind: "apiKey", key: "sk-y" });
+    delete process.env.OPENCODE_GO_API_KEY;
   });
 });
