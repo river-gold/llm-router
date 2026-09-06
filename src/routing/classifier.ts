@@ -89,7 +89,12 @@ export const runClassifier = async (
   for (const entry of classifierModels) {
     try {
       const { provider, modelId, thinking } = parseCanonicalModelRef(entry.model);
-      const backend = await getBackendModel(provider, modelId, thinking ?? entry.thinking);
+      const backend = await getBackendModel(
+        provider,
+        modelId,
+        thinking ?? entry.thinking,
+        entry.api,
+      );
       const result = await generateText({
         model: backend.model,
         system: CLASSIFIER_SYSTEM_PROMPT,

@@ -156,7 +156,7 @@ describe("runClassifier", () => {
     generateTextMock.mockResolvedValue({ text: "xhigh" } as never);
     const out = await runClassifier([{ model: "p/m#max" }], [userMsg("go")], 0);
     expect(out?.tier).toBe("xhigh");
-    expect(getBackendModelMock).toHaveBeenCalledWith("p", "m", "max");
+    expect(getBackendModelMock).toHaveBeenCalledWith("p", "m", "max", undefined);
     expect(generateTextMock).toHaveBeenCalledWith(
       expect.objectContaining({
         providerOptions: { openai: { reasoningEffort: "xhigh" } },
@@ -168,7 +168,14 @@ describe("runClassifier", () => {
     getBackendModelMock.mockResolvedValue({ model: "m", provider: "p", modelId: "m" } as never);
     generateTextMock.mockResolvedValue({ text: "low" } as never);
     await runClassifier([{ model: "p/m", thinking: "low" }], [userMsg("go")], 0);
-    expect(getBackendModelMock).toHaveBeenCalledWith("p", "m", "low");
+    expect(getBackendModelMock).toHaveBeenCalledWith("p", "m", "low", undefined);
+  });
+
+  it("passes entry api through", async () => {
+    getBackendModelMock.mockResolvedValue({ model: "m", provider: "p", modelId: "m" } as never);
+    generateTextMock.mockResolvedValue({ text: "low" } as never);
+    await runClassifier([{ model: "p/m", api: "openai-responses" }], [userMsg("go")], 0);
+    expect(getBackendModelMock).toHaveBeenCalledWith("p", "m", undefined, "openai-responses");
   });
 
   it("records invalid model refs as attempt errors", async () => {

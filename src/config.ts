@@ -4,9 +4,12 @@ import { ROUTER_TIERS } from "./types";
 
 const thinkingSchema = z.enum(["off", "minimal", "low", "medium", "high", "xhigh", "max"]);
 
+const apiSchema = z.enum(["openai-completions", "openai-responses"]);
+
 const classifierSchema = z.object({
   model: z.string().min(1),
   thinking: thinkingSchema.optional(),
+  api: apiSchema.optional(),
 });
 
 // Accept shorthand strings ("provider/model[#thinking]"); the suffix is parsed later.
@@ -17,8 +20,6 @@ const classifierEntrySchema = z.union([
     .transform((model) => ({ model })),
   classifierSchema,
 ]);
-
-const apiSchema = z.enum(["openai-completions", "openai-responses"]);
 
 const modelEntrySchema = z.union([
   z.string().min(1),

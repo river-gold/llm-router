@@ -106,14 +106,17 @@ describe("loadConfig", () => {
     files.set(
       "clf.json",
       JSON.stringify({
-        classifierModels: ["openai/x#low", { model: "openai/y", thinking: "high" }],
+        classifierModels: [
+          "openai/x#low",
+          { model: "openai/y", thinking: "high", api: "openai-responses" },
+        ],
         profiles: { p: { medium: { models: ["openai/x"] } } },
       }),
     );
     const { config } = await loadConfig("clf.json");
     expect(config.classifierModels).toEqual([
       { model: "openai/x#low" },
-      { model: "openai/y", thinking: "high" },
+      { model: "openai/y", thinking: "high", api: "openai-responses" },
     ]);
   });
 

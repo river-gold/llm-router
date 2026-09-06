@@ -17,6 +17,7 @@ export type ReasoningEffort = "none" | "low" | "medium" | "high" | "xhigh" | "ma
 export interface ClassifierConfig {
   model: string;
   thinking?: ThinkingLevel;
+  api?: RouterApi;
 }
 
 /** Outbound transport for generic providers. Defaults to "openai-completions". */
