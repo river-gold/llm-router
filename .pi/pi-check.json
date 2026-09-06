@@ -1,0 +1,20 @@
+{
+  "commands": [
+    {
+      "command": ["bun", "run", "tsc"],
+      "prompt": "컴파일 실패를 수정해라"
+    },
+    {
+      "command": ["bun", "run", "test"],
+      "prompt": "test 실패를 수정해라. 커버리지 설정 변경, ignore 주석 금지"
+    },
+    {
+      "command": ["bun", "run", "lint"],
+      "prompt": "bun run lint:fix를 실행하고, 변경된 파일을 확인한다. 실패할 경우 코드를 수정해라. lint 설정 변경, ignore 주석 금지"
+    },
+    {
+      "command": ["bun", "run", "format:check"],
+      "prompt": "bun run format 실행하고, 변경된 파일을 확인해라"
+    }
+  ]
+}

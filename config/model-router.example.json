@@ -1,0 +1,21 @@
+{
+  "classifierModels": ["codex/gpt-5.4-mini"],
+  "historySize": 0,
+  "defaultProfile": "balanced",
+  "profiles": {
+    "balanced": {
+      "high": { "models": ["codex/gpt-5.4"] },
+      "medium": { "models": ["codex/gpt-5.4-mini"] },
+      "low": { "models": ["codex/gpt-5.4-nano"] }
+    },
+    "grok": {
+      "classifierModels": [{ "model": "grok/grok-4-1-fast" }],
+      "max": { "models": ["grok/grok-4-1#max"] },
+      "xhigh": { "models": ["grok/grok-4-1#xhigh"] },
+      "high": { "models": ["grok/grok-4-1#high"] },
+      "medium": { "models": ["grok/grok-4-1#medium"] },
+      "low": { "models": ["grok/grok-4-1#low"] },
+      "minimal": { "models": ["grok/grok-4-1#minimal"] }
+    }
+  }
+}
