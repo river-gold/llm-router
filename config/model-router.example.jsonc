@@ -18,10 +18,10 @@
         "models": ["codex/gpt-5.4", "openai/gpt-5.4"],
         "thinking": "high",
         "contextWindow": 200000,
-        "maxTokens": 8000
+        "maxTokens": 8000,
       },
       "medium": { "models": ["codex/gpt-5.4-mini#medium"] },
-      "low": { "models": ["codex/gpt-5.4-nano"], "api": "openai-responses" }
+      "low": { "models": ["codex/gpt-5.4-nano"], "api": "openai-responses" },
     },
     "grok": {
       "classifierModels": [{ "model": "grok/grok-4-1-fast", "thinking": "low" }],
@@ -30,7 +30,7 @@
       "high": { "models": ["grok/grok-4-1#high"] },
       "medium": { "models": ["grok/grok-4-1#medium"] },
       "low": { "models": ["grok/grok-4-1#low"] },
-      "minimal": { "models": ["grok/grok-4-1#minimal"] }
-    }
-  }
+      "minimal": { "models": ["grok/grok-4-1#minimal"] },
+    },
+  },
 }

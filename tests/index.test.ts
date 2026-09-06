@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { startRouter } from "../src/index";
 import { reloadConfig } from "../src/api/server";
-import { loadState } from "../src/state";
+import { loadEnvFile, resolveEnvPath } from "../src/env";
+import { loadState, setStatePath } from "../src/state";
 
 vi.mock("../src/api/server", () => ({
   app: { fetch: () => new Response("ok") },
   reloadConfig: vi.fn(),
 }));
-vi.mock("../src/state", () => ({ loadState: vi.fn() }));
+vi.mock("../src/state", () => ({ loadState: vi.fn(), setStatePath: vi.fn() }));
+vi.mock("../src/env", () => ({
+  loadEnvFile: vi.fn(async () => []),
+  resolveEnvPath: vi.fn((p: string) => `${p}.env`),
+}));
 
 const reloadConfigMock = vi.mocked(reloadConfig);
 const loadStateMock = vi.mocked(loadState);
@@ -76,6 +81,18 @@ describe("startRouter", () => {
     const entry = await startRouter({ LLM_ROUTER_PORT: "5000", LLM_ROUTER_CONFIG: "c.json" });
     expect(entry.port).toBe(5000);
     expect(reloadConfigMock).toHaveBeenCalledWith("c.json");
+  });
+
+  it("loads .env next to the config and applies the state path", async () => {
+    const loadEnvFileMock = vi.mocked(loadEnvFile);
+    const setStatePathMock = vi.mocked(setStatePath);
+    await startRouter({ LLM_ROUTER_CONFIG: "conf/r.json", LLM_ROUTER_STATE: "s.json" });
+    expect(resolveEnvPath).toHaveBeenCalledWith("conf/r.json");
+    expect(loadEnvFileMock).toHaveBeenCalledWith(
+      expect.objectContaining({ LLM_ROUTER_CONFIG: "conf/r.json" }),
+      "conf/r.json.env",
+    );
+    expect(setStatePathMock).toHaveBeenCalledWith("s.json");
   });
 
   it("wraps config failures as entry errors", async () => {

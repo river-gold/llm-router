@@ -34,7 +34,7 @@ opencode (openai-compatible) ──────┘
 
 ## Config
 
-`config/model-router.jsonc` (copy from `config/model-router.example.json`):
+`config/model-router.jsonc` (copy from `config/model-router.example.jsonc`):
 
 Inbound clients use `router/<profile>[/<tier>]` as the model on both `/v1/chat/completions`
 and `/v1/responses`. Responses `reasoning.effort` / `reasoning_effort` select the tier
@@ -72,3 +72,6 @@ LLM_ROUTER_CONFIG=./config/model-router.jsonc bun run src/index.ts
 `/pi-check`는 위 4단계(tsc → test → lint → format:check)를 `.pi/pi-check.json` 순서대로 실행한다.
 
 Env: `LLM_ROUTER_PORT` (default 4891), `LLM_ROUTER_CONFIG`, `LLM_ROUTER_STATE`.
+
+Secrets can also live in `config/.env` (copy from `config/.env.example`, git-ignored).
+It is loaded at boot from the config file's directory; existing environment variables win.

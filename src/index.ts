@@ -1,5 +1,7 @@
 import { reloadConfig, app } from "./api/server";
-import { loadState } from "./state";
+import { loadEnvFile, resolveEnvPath } from "./env";
+import { DEFAULT_CONFIG_PATH } from "./config";
+import { loadState, setStatePath } from "./state";
 
 export interface RouterEntrypoint {
   port: number;
@@ -8,6 +10,10 @@ export interface RouterEntrypoint {
 }
 
 const boot = async (env: NodeJS.ProcessEnv): Promise<RouterEntrypoint> => {
+  // Secrets live next to the router config: existing env vars win over the file.
+  await loadEnvFile(env, resolveEnvPath(env.LLM_ROUTER_CONFIG ?? DEFAULT_CONFIG_PATH));
+  // statePath is read at import time; re-apply in case the .env file set it.
+  if (env.LLM_ROUTER_STATE) setStatePath(env.LLM_ROUTER_STATE);
   const port = Number(env.LLM_ROUTER_PORT ?? 4891);
   const configPath = env.LLM_ROUTER_CONFIG;
   try {
