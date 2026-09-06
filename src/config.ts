@@ -9,6 +9,15 @@ const classifierSchema = z.object({
   thinking: thinkingSchema.optional(),
 });
 
+// Accept shorthand strings ("provider/model[#thinking]"); the suffix is parsed later.
+const classifierEntrySchema = z.union([
+  z
+    .string()
+    .min(1)
+    .transform((model) => ({ model })),
+  classifierSchema,
+]);
+
 const apiSchema = z.enum(["openai-completions", "openai-responses"]);
 
 const tierSchema = z.object({
@@ -27,7 +36,7 @@ const profileSchema = z
     medium: tierSchema.optional(),
     low: tierSchema.optional(),
     minimal: tierSchema.optional(),
-    classifierModels: z.array(classifierSchema).optional(),
+    classifierModels: z.array(classifierEntrySchema).optional(),
   })
   .refine((p) => ROUTER_TIERS.some((t) => p[t] !== undefined), {
     message: "Profile must define at least one tier.",
@@ -35,7 +44,7 @@ const profileSchema = z
 
 const configSchema = z.object({
   debug: z.boolean().optional(),
-  classifierModels: z.array(classifierSchema).optional(),
+  classifierModels: z.array(classifierEntrySchema).optional(),
   historySize: z.number().int().min(0).max(20).optional(),
   defaultProfile: z.string().optional(),
   profiles: z.record(z.string(), profileSchema),
@@ -52,6 +61,9 @@ const stripJsonComments = (text: string): string =>
     })
     .join("\n");
 
+// Tolerate JSONC trailing commas (e.g. formatter output) before } or ].
+const stripTrailingCommas = (text: string): string => text.replace(/,(\s*[}\]])/g, "$1");
+
 export const loadConfig = async (
   path?: string,
 ): Promise<{ config: RouterConfig; warnings: string[] }> => {
@@ -65,7 +77,7 @@ export const loadConfig = async (
   }
   let parsed: unknown;
   try {
-    parsed = JSON.parse(stripJsonComments(raw));
+    parsed = JSON.parse(stripTrailingCommas(stripJsonComments(raw)));
   } catch (e) {
     throw new Error(`Invalid JSON in router config "${resolved}": ${(e as Error).message}`);
   }

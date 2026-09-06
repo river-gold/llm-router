@@ -1,15 +1,30 @@
 {
-  "classifierModels": ["codex/gpt-5.4-mini"],
-  "historySize": 0,
+  // Copy to config/model-router.jsonc and edit values.
+  // Top-level fields: debug, classifierModels, historySize (0-20), defaultProfile, profiles.
+  // "debug": true enables routing-decision history at GET /router/debug.
+  "debug": false,
+  // Global fallback classifiers (fast models). Per-profile classifierModels override this.
+  // Entries accept "provider/model[#thinking]" strings or { model, thinking } objects.
+  "classifierModels": ["codex/gpt-5.4-mini", { "model": "grok/grok-4-1-fast", "thinking": "low" }],
+  // Prior turn pairs fed to the classifier (0-20).
+  "historySize": 4,
   "defaultProfile": "balanced",
   "profiles": {
     "balanced": {
-      "high": { "models": ["codex/gpt-5.4"] },
-      "medium": { "models": ["codex/gpt-5.4-mini"] },
-      "low": { "models": ["codex/gpt-5.4-nano"] }
+      // Tier fields: models (fallback order), thinking, contextWindow, maxTokens, api.
+      // Canonical ref: "provider/model[#thinking]" (off|minimal|low|medium|high|xhigh|max).
+      // api: "openai-completions" (default) or "openai-responses" (outbound transport).
+      "high": {
+        "models": ["codex/gpt-5.4", "openai/gpt-5.4"],
+        "thinking": "high",
+        "contextWindow": 200000,
+        "maxTokens": 8000
+      },
+      "medium": { "models": ["codex/gpt-5.4-mini#medium"] },
+      "low": { "models": ["codex/gpt-5.4-nano"], "api": "openai-responses" }
     },
     "grok": {
-      "classifierModels": [{ "model": "grok/grok-4-1-fast" }],
+      "classifierModels": [{ "model": "grok/grok-4-1-fast", "thinking": "low" }],
       "max": { "models": ["grok/grok-4-1#max"] },
       "xhigh": { "models": ["grok/grok-4-1#xhigh"] },
       "high": { "models": ["grok/grok-4-1#high"] },

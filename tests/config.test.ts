@@ -49,6 +49,15 @@ describe("loadConfig", () => {
     await loadConfig();
   });
 
+  it("tolerates trailing commas", async () => {
+    files.set(
+      "trail.jsonc",
+      '{ "profiles": { "p": { "medium": { "models": ["openai/x"], }, }, }, }',
+    );
+    const { config } = await loadConfig("trail.jsonc");
+    expect(Object.keys(config.profiles)).toEqual(["p"]);
+  });
+
   it("strips // comments", async () => {
     files.set("c.json", "// top comment\n" + VALID + "\n// bottom comment\n");
     const { config } = await loadConfig("c.json");
@@ -81,6 +90,21 @@ describe("loadConfig", () => {
     await expect(loadConfig("badnum.json")).rejects.toThrow("Invalid router config");
     files.set("badapi.json", JSON.stringify({ profiles: { p: { medium: { api: "rest" } } } }));
     await expect(loadConfig("badapi.json")).rejects.toThrow("Invalid router config");
+  });
+
+  it("loads string classifier shorthands", async () => {
+    files.set(
+      "clf.json",
+      JSON.stringify({
+        classifierModels: ["openai/x#low", { model: "openai/y", thinking: "high" }],
+        profiles: { p: { medium: { models: ["openai/x"] } } },
+      }),
+    );
+    const { config } = await loadConfig("clf.json");
+    expect(config.classifierModels).toEqual([
+      { model: "openai/x#low" },
+      { model: "openai/y", thinking: "high" },
+    ]);
   });
 
   it("loads tier api", async () => {
