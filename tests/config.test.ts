@@ -79,6 +79,19 @@ describe("loadConfig", () => {
     await expect(loadConfig("tierless.json")).rejects.toThrow("Invalid router config");
     files.set("badnum.json", JSON.stringify({ profiles: { p: { medium: { maxTokens: -1 } } } }));
     await expect(loadConfig("badnum.json")).rejects.toThrow("Invalid router config");
+    files.set("badapi.json", JSON.stringify({ profiles: { p: { medium: { api: "rest" } } } }));
+    await expect(loadConfig("badapi.json")).rejects.toThrow("Invalid router config");
+  });
+
+  it("loads tier api", async () => {
+    files.set(
+      "api.json",
+      JSON.stringify({
+        profiles: { p: { medium: { models: ["openai/x"], api: "openai-responses" } } },
+      }),
+    );
+    const { config } = await loadConfig("api.json");
+    expect(config.profiles["p"]?.medium?.api).toBe("openai-responses");
   });
 });
 

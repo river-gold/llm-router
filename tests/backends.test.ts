@@ -93,7 +93,7 @@ describe("getBackendModel", () => {
     resolveCredentialMock.mockResolvedValue({ kind: "apiKey", key: "k" });
     delete process.env.OPENAI_BASE_URL;
     const plain = await getBackendModel("openai", "gpt-5");
-    expect(plain).toMatchObject({ provider: "openai", modelId: "gpt-5" });
+    expect(plain).toMatchObject({ provider: "openai", modelId: "gpt-5", model: "chat:gpt-5" });
     expect(createOpenAIMock).toHaveBeenCalledWith({ apiKey: "k", name: "openai" });
     process.env.OPENAI_BASE_URL = "http://local";
     await getBackendModel("openai", "gpt-5");
@@ -101,6 +101,12 @@ describe("getBackendModel", () => {
       expect.objectContaining({ baseURL: "http://local" }),
     );
     delete process.env.OPENAI_BASE_URL;
+  });
+
+  it("selects responses transport when api is openai-responses", async () => {
+    resolveCredentialMock.mockResolvedValue({ kind: "apiKey", key: "k" });
+    const out = await getBackendModel("openai", "gpt-5", undefined, "openai-responses");
+    expect(out).toMatchObject({ provider: "openai", modelId: "gpt-5", model: "responses:gpt-5" });
   });
 
   it("rejects unsupported credential kinds", async () => {

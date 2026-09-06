@@ -526,7 +526,10 @@ describe("routeRequest", () => {
           totalUsage: { inputTokens: 1, outputTokens: 1 },
         },
       ]) as never;
-    streamTextMock.mockImplementationOnce(done).mockImplementationOnce(done);
+    streamTextMock
+      .mockImplementationOnce(done)
+      .mockImplementationOnce(done)
+      .mockImplementationOnce(done);
     getBackendModelMock.mockImplementation(async () => ({ model: "m", effort: "xhigh" }) as never);
     const orphan: RoutingDecision = {
       profile: "p",
@@ -539,10 +542,20 @@ describe("routeRequest", () => {
     };
     const types = await collect(attemptModel("openai/z#high", {}, orphan, baseReq({})));
     expect(types).toEqual(["text-delta", "done"]);
-    expect(getBackendModelMock).toHaveBeenCalledWith("openai", "z", "high");
+    expect(getBackendModelMock).toHaveBeenCalledWith("openai", "z", "high", undefined);
     const bare = await collect(attemptModel("openai/z", {}, orphan, baseReq({})));
     expect(bare).toEqual(["text-delta", "done"]);
-    expect(getBackendModelMock).toHaveBeenCalledWith("openai", "z", undefined);
+    expect(getBackendModelMock).toHaveBeenCalledWith("openai", "z", undefined, undefined);
+    const resp = await collect(
+      attemptModel(
+        "openai/z",
+        { low: { models: ["openai/z"], api: "openai-responses" } },
+        orphan,
+        baseReq({}),
+      ),
+    );
+    expect(resp).toEqual(["text-delta", "done"]);
+    expect(getBackendModelMock).toHaveBeenCalledWith("openai", "z", undefined, "openai-responses");
     expect(streamTextMock).toHaveBeenCalledWith(
       expect.objectContaining({
         providerOptions: { openai: { reasoningEffort: "xhigh" } },

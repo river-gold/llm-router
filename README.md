@@ -36,6 +36,7 @@ opencode (openai-compatible) ──────┘
 `config/model-router.jsonc` (copy from `config/model-router.example.json`):
 
 - `profiles.<name>.<tier>.models`: canonical refs `provider/model[#thinking]`
+- `profiles.<name>.<tier>.api`: outbound transport, `"openai-completions"` (default) or `"openai-responses"`
 - `classifierModels` / per-profile `classifierModels`: fast models for auto tiering
 - `historySize`: prior turn pairs fed to the classifier (0–20)
 - `defaultProfile`, `debug`

@@ -3,7 +3,7 @@ import { getCodexModel } from "./codex";
 import { getGrokModel } from "./grok";
 import { envPrefix, resolveCredential } from "../credentials/resolver";
 import { createOpenAI } from "@ai-sdk/openai";
-import type { ThinkingLevel } from "../types";
+import type { RouterApi, ThinkingLevel } from "../types";
 
 export interface BackendModel {
   model: LanguageModel;
@@ -17,12 +17,14 @@ export interface BackendModel {
  * Build a backend model for a canonical provider/model.
  * - codex / grok: subscription auth via CLI credential files
  * - others: OpenAI-compatible base via "<PROVIDER>_BASE_URL" or default,
- *   auth via "<PROVIDER>_API_KEY" env
+ *   auth via "<PROVIDER>_API_KEY" env; transport selected by `api`
+ *   ("openai-completions" default, "openai-responses")
  */
 export const getBackendModel = async (
   provider: string,
   modelId: string,
   thinking?: ThinkingLevel,
+  api?: RouterApi,
 ): Promise<BackendModel> => {
   if (provider === "codex") {
     const { model, effort } = await getCodexModel(modelId, thinking);
@@ -40,5 +42,6 @@ export const getBackendModel = async (
     apiKey: resolved.key,
     name: provider,
   });
-  return { model: instance.chat(modelId), provider, modelId };
+  const model = api === "openai-responses" ? instance.responses(modelId) : instance.chat(modelId);
+  return { model, provider, modelId };
 };

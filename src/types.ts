@@ -19,11 +19,15 @@ export interface ClassifierConfig {
   thinking?: ThinkingLevel;
 }
 
+/** Outbound transport for generic providers. Defaults to "openai-completions". */
+export type RouterApi = "openai-completions" | "openai-responses";
+
 export interface RoutedTierConfig {
   models?: string[];
   thinking?: ThinkingLevel;
   contextWindow?: number;
   maxTokens?: number;
+  api?: RouterApi;
 }
 
 export interface RouterProfile {

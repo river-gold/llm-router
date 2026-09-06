@@ -4,9 +4,9 @@
   "classifierModels": ["ollama-cloud/deepseek-v4-flash:0731#off"],
   "profiles": {
     "auto": {
-      "max": { "models": ["xai/grok-4.6#xhigh"] },
-      "xhigh": { "models": ["xai/grok-4.6#high"] },
-      "high": { "models": ["xai/grok-4.6#medium"] },
+      "max": { "models": ["grok/grok-4.6#xhigh"] },
+      "xhigh": { "models": ["grok/grok-4.6#high"] },
+      "high": { "models": ["grok/grok-4.6#medium"] },
       "medium": { "models": ["ollama-cloud/deepseek-v4-flash:0731#high"] },
       "low": { "models": ["ollama-cloud/deepseek-v4-flash:0731#low"] },
       "minimal": { "models": ["ollama-cloud/deepseek-v4-flash:0731#off"] },
@@ -19,10 +19,10 @@
       "low": { "models": ["github-copilot/gpt-5.6-luna#low"] },
     },
     "grok": {
-      "xhigh": { "models": ["xai/grok-4.6#xhigh"] },
-      "high": { "models": ["xai/grok-4.6#high"] },
-      "medium": { "models": ["xai/grok-4.6#medium"] },
-      "low": { "models": ["xai/grok-4.6#low"] },
+      "xhigh": { "models": ["grok/grok-4.6#xhigh"] },
+      "high": { "models": ["grok/grok-4.6#high"] },
+      "medium": { "models": ["grok/grok-4.6#medium"] },
+      "low": { "models": ["grok/grok-4.6#low"] },
     },
     "deepseek-flash": {
       "xhigh": {

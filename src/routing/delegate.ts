@@ -147,7 +147,12 @@ export async function* attemptModel(
 ): AsyncGenerator<RouterEvent> {
   const { provider, modelId, thinking } = parseCanonicalModelRef(ref);
   const tierCfg = profile[decision.tier];
-  const backend = await getBackendModel(provider, modelId, thinking ?? tierCfg?.thinking);
+  const backend = await getBackendModel(
+    provider,
+    modelId,
+    thinking ?? tierCfg?.thinking,
+    tierCfg?.api,
+  );
   const maxTokens = req.maxTokens ?? tierCfg?.maxTokens;
   const result = streamText({
     model: backend.model,
