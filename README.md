@@ -28,12 +28,12 @@ opencode (openai-compatible) ──────┘
 | GET    | `/v1/models`             | Profile list as `router/<profile>`                              |
 | GET    | `/router/status`         | Profiles, spend (tokens), last decision                         |
 | GET    | `/router/debug`          | Recent routing decisions (config `debug: true` records)         |
-| POST   | `/router/reload`         | Hot-reload `model-router.json`                                  |
+| POST   | `/router/reload`         | Hot-reload `model-router.jsonc`                                 |
 | POST   | `/router/reset-failures` | Clear failure memory (`{"profile"?: "..."}`)                    |
 
 ## Config
 
-`config/model-router.json` (copy from `config/model-router.example.json`):
+`config/model-router.jsonc` (copy from `config/model-router.example.json`):
 
 - `profiles.<name>.<tier>.models`: canonical refs `provider/model[#thinking]`
 - `classifierModels` / per-profile `classifierModels`: fast models for auto tiering
@@ -60,7 +60,7 @@ bun run tsc # typecheck
 bun run test # vitest --coverage (100% thresholds)
 bun run lint # oxlint
 bun run format:check # oxfmt
-LLM_ROUTER_CONFIG=./config/model-router.json bun run src/index.ts
+LLM_ROUTER_CONFIG=./config/model-router.jsonc bun run src/index.ts
 ```
 
 `/pi-check`는 위 4단계(tsc → test → lint → format:check)를 `.pi/pi-check.json` 순서대로 실행한다.

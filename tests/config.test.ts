@@ -44,7 +44,7 @@ describe("loadConfig", () => {
     files.set("env.json", VALID);
     process.env.LLM_ROUTER_CONFIG = "env.json";
     await loadConfig();
-    files.set("./config/model-router.json", VALID);
+    files.set("./config/model-router.jsonc", VALID);
     delete process.env.LLM_ROUTER_CONFIG;
     await loadConfig();
   });

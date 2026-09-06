@@ -38,7 +38,7 @@ const configSchema = z.object({
   profiles: z.record(z.string(), profileSchema),
 });
 
-export const DEFAULT_CONFIG_PATH = "./config/model-router.json";
+export const DEFAULT_CONFIG_PATH = "./config/model-router.jsonc";
 
 const stripJsonComments = (text: string): string =>
   text
