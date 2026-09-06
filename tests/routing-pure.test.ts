@@ -5,6 +5,7 @@ import {
   isRouterTier,
   parseCanonicalModelRef,
   parseServerModel,
+  toModelEntry,
 } from "../src/modelRef";
 import {
   buildRoutingDecision,
@@ -124,9 +125,17 @@ describe("resolveAvailableTier", () => {
   });
 });
 
+describe("toModelEntry", () => {
+  it("wraps shorthand strings and keeps objects", () => {
+    expect(toModelEntry("openai/x#low")).toEqual({ model: "openai/x#low" });
+    const entry = { model: "openai/x", thinking: "high" as const };
+    expect(toModelEntry(entry)).toBe(entry);
+  });
+});
+
 describe("buildRoutingDecision", () => {
   const profile: RouterProfile = {
-    medium: { models: ["openai/gpt-5#low"], thinking: "high" },
+    medium: { models: [{ model: "openai/gpt-5#low", thinking: "high" }] },
   };
 
   it("builds a decision from the primary ref thinking", () => {
@@ -144,10 +153,10 @@ describe("buildRoutingDecision", () => {
     expect(typeof d.timestamp).toBe("number");
   });
 
-  it("falls back to tier thinking when the ref has none", () => {
+  it("falls back to entry thinking when the ref has none", () => {
     const d = buildRoutingDecision(
       "p",
-      { medium: { models: ["openai/gpt-5"], thinking: "high" } },
+      { medium: { models: [{ model: "openai/gpt-5", thinking: "high" }] } },
       "medium",
       "r",
     );

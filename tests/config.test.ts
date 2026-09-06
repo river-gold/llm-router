@@ -88,10 +88,17 @@ describe("loadConfig", () => {
     await expect(loadConfig("tierless.json")).rejects.toThrow("Invalid router config");
     files.set(
       "badnum.json",
-      JSON.stringify({ profiles: { p: { medium: { models: ["openai/x"], thinking: "ultra" } } } }),
+      JSON.stringify({
+        profiles: { p: { medium: { models: [{ model: "openai/x", thinking: "ultra" }] } } },
+      }),
     );
     await expect(loadConfig("badnum.json")).rejects.toThrow("Invalid router config");
-    files.set("badapi.json", JSON.stringify({ profiles: { p: { medium: { api: "rest" } } } }));
+    files.set(
+      "badapi.json",
+      JSON.stringify({
+        profiles: { p: { medium: { models: [{ model: "openai/x", api: "rest" }] } } },
+      }),
+    );
     await expect(loadConfig("badapi.json")).rejects.toThrow("Invalid router config");
   });
 
@@ -110,15 +117,36 @@ describe("loadConfig", () => {
     ]);
   });
 
-  it("loads tier api", async () => {
+  it("loads model entry api and thinking", async () => {
     files.set(
       "api.json",
       JSON.stringify({
-        profiles: { p: { medium: { models: ["openai/x"], api: "openai-responses" } } },
+        profiles: {
+          p: {
+            medium: {
+              models: [{ model: "openai/x", thinking: "low", api: "openai-responses" }],
+            },
+          },
+        },
       }),
     );
     const { config } = await loadConfig("api.json");
-    expect(config.profiles["p"]?.medium?.api).toBe("openai-responses");
+    expect(config.profiles["p"]?.medium?.models).toEqual([
+      { model: "openai/x", thinking: "low", api: "openai-responses" },
+    ]);
+  });
+
+  it("drops tier-level thinking and api", async () => {
+    files.set(
+      "tiertop.json",
+      JSON.stringify({
+        profiles: {
+          p: { medium: { models: ["openai/x"], thinking: "high", api: "openai-responses" } },
+        },
+      }),
+    );
+    const { config } = await loadConfig("tiertop.json");
+    expect(config.profiles["p"]?.medium).toEqual({ models: ["openai/x"] });
   });
 });
 

@@ -20,10 +20,17 @@ const classifierEntrySchema = z.union([
 
 const apiSchema = z.enum(["openai-completions", "openai-responses"]);
 
+const modelEntrySchema = z.union([
+  z.string().min(1),
+  z.object({
+    model: z.string().min(1),
+    thinking: thinkingSchema.optional(),
+    api: apiSchema.optional(),
+  }),
+]);
+
 const tierSchema = z.object({
-  models: z.array(z.string().min(1)).optional(),
-  thinking: thinkingSchema.optional(),
-  api: apiSchema.optional(),
+  models: z.array(modelEntrySchema).optional(),
 });
 
 const profileSchema = z

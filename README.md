@@ -40,8 +40,9 @@ Inbound clients use `router/<profile>[/<tier>]` as the model on both `/v1/chat/c
 and `/v1/responses`. Responses `reasoning.effort` / `reasoning_effort` select the tier
 the same way `reasoning_effort` does on chat completions; `background: true` is rejected.
 
-- `profiles.<name>.<tier>.models`: canonical refs `provider/model[#thinking]`
-- `profiles.<name>.<tier>.api`: outbound transport, `"openai-completions"` (default) or `"openai-responses"`
+- `profiles.<name>.<tier>.models`: entries in fallback order, `"provider/model[#thinking]"`
+  shorthand or `{ model, thinking, api }` objects (`thinking`/`api` are per-model only).
+  `api`: `"openai-completions"` (default) or `"openai-responses"` outbound transport
 - `classifierModels` / per-profile `classifierModels`: fast models for auto tiering
 - `historySize`: prior turn pairs fed to the classifier (0–20)
 - `defaultProfile`, `debug`

@@ -22,10 +22,17 @@ export interface ClassifierConfig {
 /** Outbound transport for generic providers. Defaults to "openai-completions". */
 export type RouterApi = "openai-completions" | "openai-responses";
 
-export interface RoutedTierConfig {
-  models?: string[];
+/** One model in a tier: shorthand string or object with per-model options. */
+export type RouterModelRef = string | RouterModelEntry;
+
+export interface RouterModelEntry {
+  model: string;
   thinking?: ThinkingLevel;
   api?: RouterApi;
+}
+
+export interface RoutedTierConfig {
+  models?: RouterModelRef[];
 }
 
 export interface RouterProfile {

@@ -1,4 +1,4 @@
-import type { ThinkingLevel } from "./types";
+import type { RouterModelEntry, RouterModelRef, ThinkingLevel } from "./types";
 import { ROUTER_TIERS } from "./types";
 
 const ALLOWED_THINKING: readonly string[] = [
@@ -40,6 +40,10 @@ export const parseCanonicalModelRef = (
   }
   return { provider, modelId };
 };
+
+/** Normalize a tier model entry: shorthand strings become `{ model }`. */
+export const toModelEntry = (ref: RouterModelRef): RouterModelEntry =>
+  typeof ref === "string" ? { model: ref } : ref;
 
 export const formatModelRef = (
   provider: string,

@@ -1,9 +1,10 @@
 import { streamText, stepCountIs, tool, type ModelMessage, type ToolSet } from "ai";
 import { getBackendModel } from "../backends";
-import { parseCanonicalModelRef } from "../modelRef";
+import { parseCanonicalModelRef, toModelEntry } from "../modelRef";
 import { recordDecision } from "../state";
 import type {
   RouterConfig,
+  RouterModelEntry,
   RouterProfile,
   RouterTier,
   RoutingDecision,
@@ -135,8 +136,23 @@ export const resolveTier = async (
 
 export const candidateRefs = (profile: RouterProfile, decision: RoutingDecision): string[] => {
   const models = profile[decision.tier]?.models ?? [];
-  if (models.length > 0) return [...new Set(models)];
+  const refs = models.map((m) => toModelEntry(m).model);
+  if (refs.length > 0) return [...new Set(refs)];
   return [`${decision.targetProvider}/${decision.targetModelId}`];
+};
+
+/** Per-model options for a candidate ref string (explicit entry fields win over `#suffix`). */
+export const entryForRef = (
+  profile: RouterProfile,
+  tier: RouterTier,
+  ref: string,
+): RouterModelEntry | undefined => {
+  const models = profile[tier]?.models ?? [];
+  for (const m of models) {
+    const entry = toModelEntry(m);
+    if (entry.model === ref) return entry;
+  }
+  return undefined;
 };
 
 export async function* attemptModel(
@@ -145,13 +161,13 @@ export async function* attemptModel(
   decision: RoutingDecision,
   req: RouteRequest,
 ): AsyncGenerator<RouterEvent> {
-  const { provider, modelId, thinking } = parseCanonicalModelRef(ref);
-  const tierCfg = profile[decision.tier];
+  const { provider, modelId, thinking: suffixThinking } = parseCanonicalModelRef(ref);
+  const entry = entryForRef(profile, decision.tier, ref);
   const backend = await getBackendModel(
     provider,
     modelId,
-    thinking ?? tierCfg?.thinking,
-    tierCfg?.api,
+    suffixThinking ?? entry?.thinking,
+    entry?.api,
   );
   const result = streamText({
     model: backend.model,

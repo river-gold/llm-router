@@ -1,6 +1,6 @@
 import type { RouterProfile, RouterTier, RoutingDecision, ThinkingLevel } from "../types";
 import { ROUTER_TIERS } from "../types";
-import { parseCanonicalModelRef, formatModelRef } from "../modelRef";
+import { parseCanonicalModelRef, formatModelRef, toModelEntry } from "../modelRef";
 
 export const thinkingToTier = (thinking: ThinkingLevel): RouterTier => {
   if (thinking === "max") return "max";
@@ -40,7 +40,8 @@ export const buildRoutingDecision = (
   if (!primaryRef) {
     throw new Error(`Profile "${profileName}" tier ${tier} has no models.`);
   }
-  const { provider, modelId, thinking } = parseCanonicalModelRef(primaryRef);
+  const primary = toModelEntry(primaryRef);
+  const { provider, modelId, thinking: suffixThinking } = parseCanonicalModelRef(primary.model);
   return {
     profile: profileName,
     tier,
@@ -48,7 +49,7 @@ export const buildRoutingDecision = (
     targetModelId: modelId,
     targetLabel: formatModelRef(provider, modelId),
     reasoning,
-    thinking: thinking ?? routed.thinking,
+    thinking: suffixThinking ?? primary.thinking,
     timestamp: Date.now(),
     isClassifier,
   };
