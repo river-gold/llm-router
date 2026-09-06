@@ -13,9 +13,14 @@ import {
 } from "../src/routing/decision";
 import {
   chainKey,
+  cooldownSkipMessage,
+  errorText,
   failedRefs,
+  failureCooldownUntil,
   filterFailed,
+  nextRetryAt,
   normalizeRef,
+  RATE_LIMIT_COOLDOWN_MS,
   recordFailure,
   resetFailures,
 } from "../src/routing/failureMemory";
@@ -201,6 +206,55 @@ describe("failureMemory", () => {
     const { tried, skipped } = filterFailed(["a", " b "], new Set(["b"]));
     expect(tried).toEqual(["a"]);
     expect(skipped).toEqual([" b "]);
+  });
+
+  it("stringifies errors for cooldown classification", () => {
+    expect(errorText("raw")).toBe("raw");
+    expect(errorText(new Error("boom"))).toBe("boom");
+    expect(errorText({ message: "obj" })).toBe('{"message":"obj"}');
+    expect(errorText(7)).toBe("7");
+  });
+
+  it("cools down only rate-limit errors", () => {
+    const now = Date.parse("2026-09-06T13:00:00.000Z");
+    expect(failureCooldownUntil("503 overloaded", now)).toBeNull();
+    expect(failureCooldownUntil(new Error("aborted"), now)).toBeNull();
+    expect(failureCooldownUntil("429", now)).toBe(now + RATE_LIMIT_COOLDOWN_MS);
+    const limited =
+      '429: {"message":"reached 5-hour usage limit. Your limit resets at 2026-09-06T13:31:13.576Z.","type":"rate_limit_error","code":"RATE_LIMITED"}';
+    expect(failureCooldownUntil(limited, now)).toBe(Date.parse("2026-09-06T13:31:13.576Z"));
+    expect(failureCooldownUntil("resets at 2026-13-99T99:99:99Z RATE_LIMITED", now)).toBe(
+      now + RATE_LIMIT_COOLDOWN_MS,
+    );
+    expect(
+      failureCooldownUntil("rate_limit_error resets at 2026-09-06T12:00:00.000Z", now),
+    ).toBeNull();
+  });
+
+  it("drops expired cooldowns and keeps the later until", () => {
+    resetFailures();
+    const now = 1_000;
+    recordFailure("p", "low", "a", now);
+    expect(failedRefs("p", "low", now).size).toBe(0);
+    recordFailure("p", "low", "b", now + 10);
+    recordFailure("p", "low", "b", now + 5);
+    expect([...failedRefs("p", "low", now)]).toEqual(["b"]);
+    expect(failedRefs("p", "low", now + 10).size).toBe(0);
+  });
+
+  it("reports retry time without a reset command", () => {
+    resetFailures();
+    expect(nextRetryAt("p", "low", 1)).toBeUndefined();
+    recordFailure("p", "low", "a", 50, 0);
+    expect(nextRetryAt("p", "low", 100)).toBeUndefined();
+    recordFailure("p", "low", "b", 200, 0);
+    expect(nextRetryAt("p", "low", 100)).toBe(200);
+    expect(cooldownSkipMessage("low", ["a"])).toBe(
+      "All models in low tier are in cooldown (skipped: a).",
+    );
+    expect(cooldownSkipMessage("low", ["a", "b"], Date.parse("2026-09-06T13:31:13.576Z"))).toBe(
+      "All models in low tier are in cooldown (skipped: a, b). Retry after 2026-09-06T13:31:13.576Z.",
+    );
   });
 });
 

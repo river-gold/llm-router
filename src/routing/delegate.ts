@@ -11,7 +11,14 @@ import type {
 } from "../types";
 import { runClassifier } from "./classifier";
 import { buildRoutingDecision, resolveAvailableTier, thinkingToTier } from "./decision";
-import { failedRefs, filterFailed, recordFailure } from "./failureMemory";
+import {
+  cooldownSkipMessage,
+  failedRefs,
+  failureCooldownUntil,
+  filterFailed,
+  nextRetryAt,
+  recordFailure,
+} from "./failureMemory";
 import { singleTier } from "../config";
 
 export type RouterEvent =
@@ -189,7 +196,8 @@ export async function* attemptModel(
     }
   } catch (e) {
     if (!contentStarted) {
-      recordFailure(decision.profile, decision.tier, ref);
+      const until = failureCooldownUntil(e);
+      if (until !== null) recordFailure(decision.profile, decision.tier, ref, until);
       throw e;
     }
     const detail = (e as Error).message;
@@ -273,7 +281,7 @@ export async function* routeRequest(
   const { tried, skipped } = filterFailed(refs, failedRefs(req.profile, decision.tier));
   if (tried.length === 0) {
     throw new Error(
-      `All models in ${decision.tier} tier are marked failed (skipped: ${skipped.join(", ")}). POST /router/reset-failures to retry.`,
+      cooldownSkipMessage(decision.tier, skipped, nextRetryAt(req.profile, decision.tier)),
     );
   }
   let lastError = "unknown";

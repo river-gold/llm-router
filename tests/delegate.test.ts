@@ -201,13 +201,13 @@ describe("routeRequest", () => {
     );
   });
 
-  it("rejects when every model is marked failed", async () => {
+  it("rejects when every model is in cooldown", async () => {
     const { recordFailure, resetFailures } = await import("../src/routing/failureMemory");
     resetFailures("balanced");
     recordFailure("balanced", "low", "openai/a#low");
     recordFailure("balanced", "low", "openai/b");
     await expect(collect(routeRequest(config, baseReq({ explicitTier: "low" })))).rejects.toThrow(
-      "marked failed",
+      "in cooldown",
     );
     resetFailures("balanced");
   });
@@ -317,6 +317,51 @@ describe("routeRequest", () => {
     await expect(collect(routeRequest(config, baseReq({ explicitTier: "low" })))).rejects.toThrow(
       "All 2 model(s) in low tier failed. Last error: down",
     );
+  });
+
+  it("does not skip models after a transient 503", async () => {
+    const overloaded = () =>
+      streamOf([
+        {
+          type: "error",
+          error: new Error(
+            '503: {"message":"Upstream model provider is temporarily unavailable.","type":"overloaded_error"}',
+          ),
+        },
+      ]) as never;
+    streamTextMock.mockImplementation(overloaded);
+    await expect(collect(routeRequest(config, baseReq({ explicitTier: "low" })))).rejects.toThrow(
+      "All 2 model(s) in low tier failed",
+    );
+    await expect(collect(routeRequest(config, baseReq({ explicitTier: "low" })))).rejects.toThrow(
+      "All 2 model(s) in low tier failed",
+    );
+    expect(streamTextMock).toHaveBeenCalledTimes(4);
+  });
+
+  it("skips only the rate-limited model on the next request", async () => {
+    const limited = () =>
+      streamOf([
+        {
+          type: "error",
+          error: new Error(
+            '429: {"message":"limit resets at 2099-01-01T00:00:00.000Z.","type":"rate_limit_error","code":"RATE_LIMITED"}',
+          ),
+        },
+      ]) as never;
+    const okStream = () =>
+      streamOf([
+        { type: "text-delta", text: "ok" },
+        { type: "finish", finishReason: "stop", totalUsage: {} },
+      ]) as never;
+    streamTextMock.mockImplementationOnce(limited).mockImplementation(okStream);
+    await collect(routeRequest(config, baseReq({ explicitTier: "low" })));
+    streamTextMock.mockClear();
+    streamTextMock.mockImplementation(okStream);
+    const events: unknown[] = [];
+    for await (const e of routeRequest(config, baseReq({ explicitTier: "low" }))) events.push(e);
+    expect(events.map((e) => (e as { type: string }).type)).toEqual(["text-delta", "done"]);
+    expect(streamTextMock).toHaveBeenCalledTimes(1);
   });
 
   it("handles streams ending without a terminal event", async () => {
