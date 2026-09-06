@@ -32,7 +32,7 @@ const runClassifierMock = vi.mocked(runClassifier);
 
 const profile: RouterProfile = {
   low: { models: ["openai/a#low", "openai/b"] },
-  medium: { models: ["openai/c"], thinking: "medium", maxTokens: 50 },
+  medium: { models: ["openai/c"], thinking: "medium" },
 };
 
 const config: RouterConfig = { profiles: { balanced: profile } };
@@ -236,7 +236,9 @@ describe("routeRequest", () => {
       usage: { inputTokens: 2, outputTokens: 5, totalTokens: 7 },
     });
     expect(recordDecision).toHaveBeenCalledTimes(1);
-    expect(streamTextMock).toHaveBeenCalledWith(expect.objectContaining({ maxOutputTokens: 50 }));
+    expect(streamTextMock).toHaveBeenCalledWith(
+      expect.not.objectContaining({ maxOutputTokens: expect.anything() }),
+    );
   });
 
   it("passes tools, choice, and limits through", async () => {

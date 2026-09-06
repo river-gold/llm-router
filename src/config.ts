@@ -23,8 +23,6 @@ const apiSchema = z.enum(["openai-completions", "openai-responses"]);
 const tierSchema = z.object({
   models: z.array(z.string().min(1)).optional(),
   thinking: thinkingSchema.optional(),
-  contextWindow: z.number().int().positive().optional(),
-  maxTokens: z.number().int().positive().optional(),
   api: apiSchema.optional(),
 });
 

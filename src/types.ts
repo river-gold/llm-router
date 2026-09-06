@@ -25,8 +25,6 @@ export type RouterApi = "openai-completions" | "openai-responses";
 export interface RoutedTierConfig {
   models?: string[];
   thinking?: ThinkingLevel;
-  contextWindow?: number;
-  maxTokens?: number;
   api?: RouterApi;
 }
 

@@ -153,7 +153,6 @@ export async function* attemptModel(
     thinking ?? tierCfg?.thinking,
     tierCfg?.api,
   );
-  const maxTokens = req.maxTokens ?? tierCfg?.maxTokens;
   const result = streamText({
     model: backend.model,
     messages: req.messages,
@@ -161,7 +160,7 @@ export async function* attemptModel(
     ...(req.toolChoice === "none" ? { toolChoice: "none" as const } : {}),
     ...(req.temperature !== undefined ? { temperature: req.temperature } : {}),
     ...(req.topP !== undefined ? { topP: req.topP } : {}),
-    ...(maxTokens !== undefined ? { maxOutputTokens: maxTokens } : {}),
+    ...(req.maxTokens !== undefined ? { maxOutputTokens: req.maxTokens } : {}),
     ...(backend.effort ? { providerOptions: { openai: { reasoningEffort: backend.effort } } } : {}),
   });
 

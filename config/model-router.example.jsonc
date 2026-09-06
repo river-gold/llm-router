@@ -11,14 +11,13 @@
   "defaultProfile": "balanced",
   "profiles": {
     "balanced": {
-      // Tier fields: models (fallback order), thinking, contextWindow, maxTokens, api.
+      // Tier fields: models (fallback order), thinking, api.
       // Canonical ref: "provider/model[#thinking]" (off|minimal|low|medium|high|xhigh|max).
       // api: "openai-completions" (default) or "openai-responses" (outbound transport).
+      // Output length is client-controlled (max_tokens / max_output_tokens).
       "high": {
         "models": ["codex/gpt-5.4", "openai/gpt-5.4"],
         "thinking": "high",
-        "contextWindow": 200000,
-        "maxTokens": 8000,
       },
       "medium": { "models": ["codex/gpt-5.4-mini#medium"] },
       "low": { "models": ["codex/gpt-5.4-nano"], "api": "openai-responses" },

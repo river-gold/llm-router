@@ -86,7 +86,10 @@ describe("loadConfig", () => {
   it("throws on schema violations", async () => {
     files.set("tierless.json", JSON.stringify({ profiles: { p: {} } }));
     await expect(loadConfig("tierless.json")).rejects.toThrow("Invalid router config");
-    files.set("badnum.json", JSON.stringify({ profiles: { p: { medium: { maxTokens: -1 } } } }));
+    files.set(
+      "badnum.json",
+      JSON.stringify({ profiles: { p: { medium: { models: ["openai/x"], thinking: "ultra" } } } }),
+    );
     await expect(loadConfig("badnum.json")).rejects.toThrow("Invalid router config");
     files.set("badapi.json", JSON.stringify({ profiles: { p: { medium: { api: "rest" } } } }));
     await expect(loadConfig("badapi.json")).rejects.toThrow("Invalid router config");
