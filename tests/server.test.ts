@@ -42,6 +42,13 @@ const chat = (body: unknown, path = "/v1/chat/completions"): Request =>
     body: typeof body === "string" ? body : JSON.stringify(body),
   });
 
+const responses = (body: unknown): Request =>
+  new Request("http://x/v1/responses", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: typeof body === "string" ? body : JSON.stringify(body),
+  });
+
 beforeEach(() => {
   vi.clearAllMocks();
   loadConfigMock.mockResolvedValue({ config: cfg, warnings: [] } as never);
@@ -201,6 +208,25 @@ describe("POST /v1/chat/completions", () => {
     expect(res.status).toBe(500);
   });
 
+  it("rejects invalid responses payloads", async () => {
+    await reloadConfig("a.json");
+    const bad = await app.request(responses("{bad"));
+    expect(bad.status).toBe(400);
+    for (const body of [
+      {},
+      { model: "router/balanced" },
+      { input: "hi" },
+      { model: "openai/x", input: "hi" },
+    ]) {
+      const res = await app.request(responses(body));
+      expect(res.status).toBe(body.model === "openai/x" ? 404 : 400);
+    }
+    const bg = await app.request(
+      responses({ model: "router/balanced", input: "hi", background: true }),
+    );
+    expect(bg.status).toBe(400);
+  });
+
   it("streams SSE events including errors", async () => {
     await reloadConfig("a.json");
     routeRequestMock.mockReturnValueOnce(
@@ -244,6 +270,121 @@ describe("POST /v1/chat/completions", () => {
     );
     const errText = await errRes.text();
     expect(errText).toContain("stream bad");
+  });
+});
+
+describe("POST /v1/responses", () => {
+  it("returns a response object without streaming", async () => {
+    await reloadConfig("a.json");
+    routeRequestMock.mockReturnValue(
+      streamOf([
+        { type: "text-delta", text: "hi" },
+        {
+          type: "done",
+          finishReason: "stop",
+          usage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 },
+        },
+      ]) as never,
+    );
+    const res = await app.request(
+      responses({
+        model: "router/balanced/low",
+        input: [{ role: "user", content: [{ type: "input_text", text: "hi" }] }],
+        instructions: "be brief",
+        tools: [{ type: "function", name: "f", parameters: {} }],
+        tool_choice: "auto",
+        reasoning: { effort: "low" },
+        temperature: 0.2,
+        top_p: 0.8,
+        max_output_tokens: 5,
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      object: string;
+      status: string;
+      model: string;
+      usage: { total_tokens: number };
+    };
+    expect(body.object).toBe("response");
+    expect(body.status).toBe("completed");
+    expect(body.model).toBe("router/balanced/low");
+    expect(body.usage.total_tokens).toBe(3);
+    expect(routeRequest).toHaveBeenCalled();
+  });
+
+  it("supports string input and reasoning_effort", async () => {
+    await reloadConfig("a.json");
+    routeRequestMock.mockReturnValue(streamOf([]) as never);
+    const res = await app.request(
+      responses({
+        model: "router/balanced/high",
+        input: "hi",
+        reasoning_effort: "high",
+        temperature: 0,
+        top_p: 1,
+        max_output_tokens: 1,
+      }),
+    );
+    expect(res.status).toBe(200);
+    const streamed = await app.request(
+      responses({ model: "router/balanced", input: "hi", stream: false }),
+    );
+    expect(streamed.status).toBe(200);
+    const streamedTier = await app.request(
+      responses({ model: "router/balanced/low", input: "hi", stream: true }),
+    );
+    expect(streamedTier.status).toBe(200);
+  });
+
+  it("maps router failures to router_error", async () => {
+    await reloadConfig("a.json");
+    routeRequestMock.mockReturnValueOnce(
+      rejectingIterator(Object.assign(new Error("denied"), { status: 403 })) as never,
+    );
+    const denied = await app.request(responses({ model: "router/balanced", input: "hi" }));
+    expect(denied.status).toBe(403);
+    routeRequestMock.mockReturnValueOnce(rejectingIterator(new Error("boom")) as never);
+    const failed = await app.request(responses({ model: "router/balanced", input: "hi" }));
+    expect(failed.status).toBe(500);
+  });
+
+  it("streams responses SSE ending with response.completed", async () => {
+    await reloadConfig("a.json");
+    routeRequestMock.mockReturnValueOnce(
+      streamOf([
+        { type: "text-delta", text: "a" },
+        { type: "reasoning-delta", text: "r" },
+        { type: "tool-call-delta", id: "t1", name: "f", argsDelta: "{}" },
+        {
+          type: "done",
+          finishReason: "stop",
+          usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+        },
+      ]) as never,
+    );
+    const res = await app.request(
+      responses({
+        model: "router/balanced",
+        input: "hi",
+        stream: true,
+        tools: [{ type: "function", name: "f" }],
+        tool_choice: { type: "function", name: "f" },
+        max_tokens: 5,
+      }),
+    );
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    expect(text).toContain("response.completed");
+    expect(text).toContain("response.output_text.delta");
+    expect(text).not.toContain("[DONE]");
+
+    routeRequestMock.mockReturnValueOnce(rejectingIterator(new Error("stream bad")) as never);
+    const errRes = await app.request(
+      responses({ model: "router/balanced", input: "hi", stream: true }),
+    );
+    const errText = await errRes.text();
+    expect(errText).toContain("response.failed");
   });
 });
 

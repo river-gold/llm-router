@@ -2,15 +2,51 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { loadConfig } from "../config";
 import { resetFailures } from "../routing/failureMemory";
-import { passthroughTools, routeRequest } from "../routing/delegate";
+import { passthroughTools, routeRequest, type RouterEvent } from "../routing/delegate";
 import { snapshot, loadState } from "../state";
 import { toModelMessages, type OpenAIMessage } from "./convert";
+import {
+  buildResponsesResponse,
+  collectRouteEvents,
+  pipeToResponsesStream,
+  responsesToolChoice,
+  responsesToolsToToolSet,
+  toModelMessagesFromResponses,
+  type ResponsesRequestBody,
+} from "./responses";
 import type { RouterConfig, RouterTier } from "../types";
 
 interface ServerState {
   config: RouterConfig;
   configPath?: string;
 }
+
+interface ResponsesRouteOptions {
+  effort?: string;
+  tools?: NonNullable<ReturnType<typeof responsesToolsToToolSet>>;
+  toolChoice?: NonNullable<ReturnType<typeof responsesToolChoice>>;
+  temperature?: number;
+  topP?: number;
+  maxTokens?: number;
+}
+
+const responsesRouteOptions = (body: ResponsesRequestBody): ResponsesRouteOptions => {
+  const effort = body.reasoning_effort ?? body.reasoning?.effort;
+  const tools = responsesToolsToToolSet(body.tools);
+  const toolChoice = responsesToolChoice(body.tool_choice);
+  return {
+    ...(effort ? { effort } : {}),
+    ...(tools ? { tools } : {}),
+    ...(toolChoice ? { toolChoice } : {}),
+    ...(body.temperature !== undefined ? { temperature: body.temperature } : {}),
+    ...(body.top_p !== undefined ? { topP: body.top_p } : {}),
+    ...(body.max_output_tokens !== undefined
+      ? { maxTokens: body.max_output_tokens }
+      : body.max_tokens !== undefined
+        ? { maxTokens: body.max_tokens }
+        : {}),
+  };
+};
 
 const state: ServerState = { config: { profiles: {} } };
 
@@ -251,6 +287,94 @@ app.post("/v1/chat/completions", async (c) => {
     }
     await stream.writeSSE({ data: "[DONE]" });
   });
+});
+
+const RESPONSES_MODEL_RE = /^router\/([^/]+)(?:\/([^/]+))?$/;
+
+app.post("/v1/responses", async (c) => {
+  let body: ResponsesRequestBody;
+  try {
+    body = (await c.req.json()) as ResponsesRequestBody;
+  } catch {
+    return c.json({ error: { message: "Invalid JSON body.", type: "invalid_request_error" } }, 400);
+  }
+  if (!body.model || body.input === undefined || body.input === null) {
+    return c.json(
+      { error: { message: 'Expected "model" and "input".', type: "invalid_request_error" } },
+      400,
+    );
+  }
+  const match = RESPONSES_MODEL_RE.exec(body.model);
+  if (!match) {
+    return c.json(
+      {
+        error: {
+          message: `Model "${body.model}" not served. Use "router/<profile>[/<tier>]".`,
+          type: "invalid_request_error",
+        },
+      },
+      404,
+    );
+  }
+  if (body.background === true) {
+    return c.json(
+      {
+        error: {
+          message: "Background mode is not supported. Retry without background.",
+          type: "invalid_request_error",
+        },
+      },
+      400,
+    );
+  }
+  const model = body.model;
+  const input = body.input;
+  const profile = match[1] as string;
+  const explicitTier = match[2] as RouterTier | undefined;
+  const routeOptions = responsesRouteOptions(body);
+
+  if (!body.stream) {
+    try {
+      const collected = await collectRouteEvents(
+        routeRequest(state.config, {
+          profile,
+          ...(explicitTier ? { explicitTier } : {}),
+          ...routeOptions,
+          messages: toModelMessagesFromResponses(input, body.instructions),
+        }),
+      );
+      return c.json(
+        buildResponsesResponse({
+          model,
+          text: collected.text,
+          reasoning: collected.reasoning || undefined,
+          toolCalls: collected.toolCalls,
+          finishReason: collected.finishReason,
+          usage: collected.usage,
+        }),
+      );
+    } catch (e) {
+      const status = (e as { status?: number }).status ?? 500;
+      return c.json(
+        { error: { message: (e as Error).message, type: "router_error" } },
+        status as 500,
+      );
+    }
+  }
+
+  const baseRoute = {
+    profile,
+    ...(explicitTier ? { explicitTier } : {}),
+    ...routeOptions,
+    messages: toModelMessagesFromResponses(input, body.instructions),
+  };
+  const streamEvents = (): AsyncIterable<RouterEvent> => routeRequest(state.config, baseRoute);
+
+  return streamSSE(c, (stream) =>
+    pipeToResponsesStream(streamEvents(), model, (event, data) =>
+      stream.writeSSE({ event, data: JSON.stringify(data) }),
+    ),
+  );
 });
 
 app.get("/router/status", async (c) => {

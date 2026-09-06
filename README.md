@@ -25,6 +25,7 @@ opencode (openai-compatible) ──────┘
 | Method | Path                     | Description                                                     |
 | ------ | ------------------------ | --------------------------------------------------------------- |
 | POST   | `/v1/chat/completions`   | OpenAI-compatible chat (stream + non-stream, tools passthrough) |
+| POST   | `/v1/responses`          | Responses API (stream + non-stream, background unsupported)     |
 | GET    | `/v1/models`             | Profile list as `router/<profile>`                              |
 | GET    | `/router/status`         | Profiles, spend (tokens), last decision                         |
 | GET    | `/router/debug`          | Recent routing decisions (config `debug: true` records)         |
@@ -34,6 +35,10 @@ opencode (openai-compatible) ──────┘
 ## Config
 
 `config/model-router.jsonc` (copy from `config/model-router.example.json`):
+
+Inbound clients use `router/<profile>[/<tier>]` as the model on both `/v1/chat/completions`
+and `/v1/responses`. Responses `reasoning.effort` / `reasoning_effort` select the tier
+the same way `reasoning_effort` does on chat completions; `background: true` is rejected.
 
 - `profiles.<name>.<tier>.models`: canonical refs `provider/model[#thinking]`
 - `profiles.<name>.<tier>.api`: outbound transport, `"openai-completions"` (default) or `"openai-responses"`
