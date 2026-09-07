@@ -3,7 +3,9 @@ import { generateText } from "ai";
 import type { ModelMessage } from "ai";
 import { getBackendModel } from "../src/backends";
 import {
+  buildClassifierSystemPrompt,
   CLASSIFIER_SYSTEM_PROMPT,
+  DEFAULT_TIER_GUIDES,
   parseClassifierOutput,
   runClassifier,
 } from "../src/routing/classifier";
@@ -181,5 +183,44 @@ describe("runClassifier", () => {
   it("records invalid model refs as attempt errors", async () => {
     await expect(runClassifier([{ model: "bogus" }], [userMsg("go")], 0)).resolves.toBeUndefined();
     expect(getBackendModelMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("buildClassifierSystemPrompt", () => {
+  it("matches the legacy prompt by default", () => {
+    expect(buildClassifierSystemPrompt()).toBe(CLASSIFIER_SYSTEM_PROMPT);
+    expect(buildClassifierSystemPrompt({})).toBe(CLASSIFIER_SYSTEM_PROMPT);
+  });
+
+  it("applies partial overrides and keeps defaults for the rest", () => {
+    const prompt = buildClassifierSystemPrompt({
+      low: "Custom low work.",
+      max: "Custom max work.",
+    });
+    expect(prompt).toContain("- low: Custom low work.");
+    expect(prompt).toContain("- max: Custom max work.");
+    expect(prompt).toContain(`- minimal: ${DEFAULT_TIER_GUIDES.minimal}`);
+    expect(prompt).toContain(`- medium: ${DEFAULT_TIER_GUIDES.medium}`);
+  });
+
+  it("passes tierGuides through to generateText", async () => {
+    getBackendModelMock.mockResolvedValue({ model: "m", provider: "p", modelId: "m" } as never);
+    generateTextMock.mockResolvedValue({ text: "high" } as never);
+    const out = await runClassifier([{ model: "p/m" }], [userMsg("go")], 0, {
+      high: "Custom high work.",
+    });
+    expect(out?.tier).toBe("high");
+    const system = generateTextMock.mock.calls[0][0].system as string;
+    expect(system).toContain("- high: Custom high work.");
+    expect(system).toContain(`- low: ${DEFAULT_TIER_GUIDES.low}`);
+  });
+
+  it("uses the default prompt when guides are omitted", async () => {
+    getBackendModelMock.mockResolvedValue({ model: "m", provider: "p", modelId: "m" } as never);
+    generateTextMock.mockResolvedValue({ text: "low" } as never);
+    await runClassifier([{ model: "p/m" }], [userMsg("go")], 0);
+    expect(generateTextMock).toHaveBeenCalledWith(
+      expect.objectContaining({ system: CLASSIFIER_SYSTEM_PROMPT }),
+    );
   });
 });

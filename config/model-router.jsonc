@@ -2,6 +2,16 @@
   "debug": true,
   "historySize": 4,
   "classifierModels": ["ollama-cloud/deepseek-v4-flash:0731#off"],
+  // Classifier tier descriptions (all tiers = defaults; edit a line to override).
+  // Partial map OK. Empty/whitespace/non-string/unknown keys ignored with warning.
+  "tierGuides": {
+    "minimal": "Mechanical transforms with no judgment: format, typo, rename, indent, template fill, quote-from-context.",
+    "low": "Cheap language/lookup work: summaries, changelogs, commit messages, quick explanations, small bounded transforms, simple read-only lookup.",
+    "medium": "Execute a known plan: spec-following implementation, multi-file edits, focused debugging with known cause, tests/fixes, routine wiring.",
+    "high": "Local design under uncertainty: module architecture, planning, tradeoff analysis, broad debugging, large refactors, codebase research.",
+    "xhigh": "Cross-cutting or high-blast-radius work: migrations, ambiguous RCA, security-sensitive changes, multi-repo/system design, risky refactors.",
+    "max": "Novel or irreversible work: greenfield strategy, adversarial audit, long-horizon research with conflicting sources, eval/algorithm invention.",
+  },
   "profiles": {
     "auto": {
       "max": { "models": ["grok/grok-4.6#xhigh"] },

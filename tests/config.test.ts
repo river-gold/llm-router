@@ -139,6 +139,110 @@ describe("loadConfig", () => {
     ]);
   });
 
+  it("loads full and partial tierGuides", async () => {
+    files.set(
+      "guides.json",
+      JSON.stringify({
+        tierGuides: {
+          minimal: "m",
+          low: "l",
+          medium: "med",
+          high: "h",
+          xhigh: "x",
+          max: "top",
+        },
+        profiles: { p: { medium: { models: ["openai/x"] } } },
+      }),
+    );
+    const full = await loadConfig("guides.json");
+    expect(full.config.tierGuides).toEqual({
+      minimal: "m",
+      low: "l",
+      medium: "med",
+      high: "h",
+      xhigh: "x",
+      max: "top",
+    });
+    files.set(
+      "partial.json",
+      JSON.stringify({
+        tierGuides: { low: "Custom low." },
+        profiles: { p: { medium: { models: ["openai/x"] } } },
+      }),
+    );
+    const partial = await loadConfig("partial.json");
+    expect(partial.config.tierGuides).toEqual({ low: "Custom low." });
+  });
+
+  it("trims tierGuides values", async () => {
+    files.set(
+      "trim.json",
+      JSON.stringify({
+        tierGuides: { low: "  ok  " },
+        profiles: { p: { medium: { models: ["openai/x"] } } },
+      }),
+    );
+    const { config } = await loadConfig("trim.json");
+    expect(config.tierGuides).toEqual({ low: "ok" });
+  });
+
+  it("throws on empty tierGuides values", async () => {
+    files.set(
+      "empty.json",
+      JSON.stringify({
+        tierGuides: { low: "" },
+        profiles: { p: { medium: { models: ["openai/x"] } } },
+      }),
+    );
+    await expect(loadConfig("empty.json")).rejects.toThrow("Invalid router config");
+  });
+
+  it("throws on whitespace-only tierGuides values", async () => {
+    files.set(
+      "blank.json",
+      JSON.stringify({
+        tierGuides: { high: "   " },
+        profiles: { p: { medium: { models: ["openai/x"] } } },
+      }),
+    );
+    await expect(loadConfig("blank.json")).rejects.toThrow(
+      "tierGuides values must be non-blank strings",
+    );
+  });
+
+  it("throws on non-string tierGuides values", async () => {
+    files.set(
+      "nonstring.json",
+      JSON.stringify({
+        tierGuides: { medium: 123 },
+        profiles: { p: { medium: { models: ["openai/x"] } } },
+      }),
+    );
+    await expect(loadConfig("nonstring.json")).rejects.toThrow("Invalid router config");
+  });
+
+  it("throws on non-object tierGuides", async () => {
+    files.set(
+      "bad.json",
+      JSON.stringify({
+        tierGuides: "nope",
+        profiles: { p: { medium: { models: ["openai/x"] } } },
+      }),
+    );
+    await expect(loadConfig("bad.json")).rejects.toThrow("Invalid router config");
+  });
+
+  it("throws on unknown tierGuides keys", async () => {
+    files.set(
+      "unknown.json",
+      JSON.stringify({
+        tierGuides: { low: "Custom low.", ultra: "nope" },
+        profiles: { p: { medium: { models: ["openai/x"] } } },
+      }),
+    );
+    await expect(loadConfig("unknown.json")).rejects.toThrow("Invalid router config");
+  });
+
   it("drops tier-level thinking and api", async () => {
     files.set(
       "tiertop.json",

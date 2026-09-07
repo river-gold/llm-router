@@ -105,7 +105,12 @@ export const resolveTier = async (
   }
   const classifiers = profile.classifierModels ?? config.classifierModels ?? [];
   if (classifiers.length > 0 && !hasToolMessages(req.messages)) {
-    const result = await runClassifier(classifiers, req.messages, config.historySize ?? 0);
+    const result = await runClassifier(
+      classifiers,
+      req.messages,
+      config.historySize ?? 0,
+      config.tierGuides,
+    );
     if (result) {
       const tier = resolveAvailableTier(profile, result.tier);
       return {

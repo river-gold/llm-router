@@ -48,10 +48,30 @@ const profileSchema = z
     message: "Profile must define at least one tier.",
   });
 
+const tierGuideValueSchema = z
+  .string()
+  .min(1)
+  .refine((s) => s.trim().length > 0, {
+    message: "tierGuides values must be non-blank strings",
+  })
+  .transform((s) => s.trim());
+
+const tierGuidesSchema = z
+  .object({
+    minimal: tierGuideValueSchema.optional(),
+    low: tierGuideValueSchema.optional(),
+    medium: tierGuideValueSchema.optional(),
+    high: tierGuideValueSchema.optional(),
+    xhigh: tierGuideValueSchema.optional(),
+    max: tierGuideValueSchema.optional(),
+  })
+  .strict();
+
 const configSchema = z.object({
   debug: z.boolean().optional(),
   classifierModels: z.array(classifierEntrySchema).optional(),
   historySize: z.number().int().min(0).max(20).optional(),
+  tierGuides: tierGuidesSchema.optional(),
   defaultProfile: z.string().optional(),
   profiles: z.record(z.string(), profileSchema),
 });

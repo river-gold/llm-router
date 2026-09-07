@@ -45,6 +45,7 @@ the same way `reasoning_effort` does on chat completions; `background: true` is 
   `api`: `"openai-completions"` (default) or `"openai-responses"` outbound transport
 - `classifierModels` / per-profile `classifierModels`: fast models for auto tiering
 - `historySize`: prior turn pairs fed to the classifier (0–20)
+- `tierGuides`: optional top-level map of tier name → classifier description (`minimal`/`low`/`medium`/`high`/`xhigh`/`max`). Replaces the matching built-in tier lines in the classifier system prompt. Partial overrides keep defaults for the rest; values are trimmed. Invalid tierGuides (non-object, unknown tier keys, non-string or empty/whitespace-only values) fail config load with an error. Hot-reloadable via `POST /router/reload` (llm-router) / `/router reload` (pi-model-router)
 - `defaultProfile`, `debug`
 
 ## Credentials (read-only, never written)

@@ -1,6 +1,6 @@
 {
   // Copy to config/model-router.jsonc and edit values.
-  // Top-level fields: debug, classifierModels, historySize (0-20), defaultProfile, profiles.
+  // Top-level fields: debug, classifierModels, historySize (0-20), tierGuides, defaultProfile, profiles.
   // "debug": true enables routing-decision history at GET /router/debug.
   "debug": false,
   // Global fallback classifiers (fast models). Per-profile classifierModels override this.
@@ -8,6 +8,19 @@
   "classifierModels": ["codex/gpt-5.4-mini", { "model": "grok/grok-4-1-fast", "thinking": "low" }],
   // Prior turn pairs fed to the classifier (0-20).
   "historySize": 4,
+  // Optional per-tier descriptions for the classifier system prompt.
+  // Specify only the tiers to override; the rest keep their defaults.
+  // Invalid tierGuides (non-object, unknown tier keys, non-string or
+  // empty/whitespace-only values) fail config load with an error.
+  // Values are trimmed. Hot-reload with POST /router/reload.
+  // "tierGuides": {
+  //   "minimal": "Mechanical transforms with no judgment: format, typo, rename, indent, template fill, quote-from-context.",
+  //   "low": "Cheap language/lookup work: summaries, changelogs, commit messages, quick explanations, small bounded transforms, simple read-only lookup.",
+  //   "medium": "Execute a known plan: spec-following implementation, multi-file edits, focused debugging with known cause, tests/fixes, routine wiring.",
+  //   "high": "Local design under uncertainty: module architecture, planning, tradeoff analysis, broad debugging, large refactors, codebase research.",
+  //   "xhigh": "Cross-cutting or high-blast-radius work: migrations, ambiguous RCA, security-sensitive changes, multi-repo/system design, risky refactors.",
+  //   "max": "Novel or irreversible work: greenfield strategy, adversarial audit, long-horizon research with conflicting sources, eval/algorithm invention."
+  // },
   "defaultProfile": "balanced",
   "profiles": {
     "balanced": {

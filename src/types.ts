@@ -50,9 +50,12 @@ export interface RouterConfig {
   debug?: boolean;
   classifierModels?: ClassifierConfig[];
   historySize?: number;
+  tierGuides?: TierGuides;
   defaultProfile?: string;
   profiles: Record<string, RouterProfile>;
 }
+
+export type TierGuides = Partial<Record<RouterTier, string>>;
 
 export interface RoutingDecision {
   profile: string;

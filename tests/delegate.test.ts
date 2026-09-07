@@ -168,6 +168,25 @@ describe("resolveTier", () => {
     expect(out.classifierUsed).toBe(true);
   });
 
+  it("forwards config tierGuides to the classifier", async () => {
+    runClassifierMock.mockResolvedValue({ tier: "low", attempts: [] });
+    const tierGuides = { low: "Custom low." };
+    const cfg: RouterConfig = {
+      profiles: { balanced: profile },
+      classifierModels: [{ model: "openai/clf" }],
+      historySize: 2,
+      tierGuides,
+    };
+    const messages = baseReq().messages;
+    await resolveTier(cfg, "balanced", profile, { messages });
+    expect(runClassifierMock).toHaveBeenCalledWith(
+      [{ model: "openai/clf" }],
+      messages,
+      2,
+      tierGuides,
+    );
+  });
+
   it("defaults to medium when the classifier is skipped or fails", async () => {
     runClassifierMock.mockResolvedValue(undefined);
     const toolReq = baseReq({ messages: [{ role: "tool", content: [] } as never] });
