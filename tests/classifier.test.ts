@@ -21,25 +21,25 @@ const userMsg = (content: ModelMessage["content"]): ModelMessage =>
 const assistantMsg = (content: ModelMessage["content"]): ModelMessage =>
   ({ role: "assistant", content }) as ModelMessage;
 
-describe("parseClassifierOutput", () => {
-  it("parses tiers case-insensitively with whitespace", () => {
+describe("parseClassifierOutput 함수", () => {
+  it("대소문자 구분 없이 공백을 무시하고 tier를 파싱한다", () => {
     expect(parseClassifierOutput(" HIGH ")).toBe("high");
     expect(parseClassifierOutput("minimal")).toBe("minimal");
   });
 
-  it("rejects empty and unknown output", () => {
+  it("빈 출력과 알 수 없는 출력을 거부한다", () => {
     expect(parseClassifierOutput("")).toBeUndefined();
     expect(parseClassifierOutput("   ")).toBeUndefined();
     expect(parseClassifierOutput("banana")).toBeUndefined();
   });
 });
 
-describe("runClassifier", () => {
+describe("runClassifier 함수", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("returns undefined without user text", async () => {
+  it("사용자 텍스트가 없으면 undefined를 반환한다", async () => {
     await expect(
       runClassifier([{ model: "p/m" }], [assistantMsg("hi")], 0),
     ).resolves.toBeUndefined();
@@ -50,7 +50,7 @@ describe("runClassifier", () => {
     expect(getBackendModelMock).not.toHaveBeenCalled();
   });
 
-  it("classifies from string user content without history", async () => {
+  it("히스토리 없이 문자열 사용자 콘텐츠에서 분류한다", async () => {
     getBackendModelMock.mockResolvedValue({ model: "m", provider: "p", modelId: "m" } as never);
     generateTextMock.mockResolvedValue({ text: "low" } as never);
     const out = await runClassifier([{ model: "p/m" }], [userMsg("do it")], 0);
@@ -61,7 +61,7 @@ describe("runClassifier", () => {
     );
   });
 
-  it("reads user text from array content and includes history pairs", async () => {
+  it("배열 콘텐츠에서 사용자 텍스트를 읽고 히스토리 쌍을 포함한다", async () => {
     getBackendModelMock.mockResolvedValue({ model: "m", provider: "p", modelId: "m" } as never);
     generateTextMock.mockResolvedValue({ text: "max" } as never);
     const long = "u".repeat(600);
@@ -81,7 +81,7 @@ describe("runClassifier", () => {
     expect(prompt).not.toContain(long);
   });
 
-  it("covers history pair branches", async () => {
+  it("히스토리 쌍 분기를 모두 다룬다", async () => {
     getBackendModelMock.mockResolvedValue({ model: "m", provider: "p", modelId: "m" } as never);
     generateTextMock.mockResolvedValue({ text: "medium" } as never);
     await runClassifier(
@@ -101,7 +101,7 @@ describe("runClassifier", () => {
     expect(prompt).not.toContain("short");
   });
 
-  it("skips non-text array parts and empty pairs", async () => {
+  it("텍스트가 아닌 배열 요소와 빈 쌍을 건너뛴다", async () => {
     getBackendModelMock.mockResolvedValue({ model: "m", provider: "p", modelId: "m" } as never);
     generateTextMock.mockResolvedValue({ text: "medium" } as never);
     const out = await runClassifier(
@@ -116,7 +116,7 @@ describe("runClassifier", () => {
     expect(out?.tier).toBe("medium");
   });
 
-  it("retries across models on unparseable output and errors", async () => {
+  it("파싱할 수 없는 출력과 에러에 대해 여러 모델로 재시도한다", async () => {
     getBackendModelMock
       .mockResolvedValueOnce({ model: "m", provider: "p", modelId: "m" } as never)
       .mockRejectedValueOnce(new Error("no backend"))
@@ -137,18 +137,18 @@ describe("runClassifier", () => {
     ]);
   });
 
-  it("returns undefined when every model fails", async () => {
+  it("모든 모델이 실패하면 undefined를 반환한다", async () => {
     getBackendModelMock.mockRejectedValue(new Error("down"));
     await expect(
       runClassifier([{ model: "p/a" }, { model: "p/b" }], [userMsg("go")], 0),
     ).resolves.toBeUndefined();
   });
 
-  it("returns undefined for empty classifier list", async () => {
+  it("분류기 목록이 비어 있으면 undefined를 반환한다", async () => {
     await expect(runClassifier([], [userMsg("go")], 0)).resolves.toBeUndefined();
   });
 
-  it("passes ref thinking and effort provider options", async () => {
+  it("ref thinking과 effort provider 옵션을 전달한다", async () => {
     getBackendModelMock.mockResolvedValue({
       model: "m",
       provider: "p",
@@ -166,33 +166,33 @@ describe("runClassifier", () => {
     );
   });
 
-  it("falls back to entry thinking when the ref has none", async () => {
+  it("ref에 thinking이 없으면 항목의 thinking으로 대체한다", async () => {
     getBackendModelMock.mockResolvedValue({ model: "m", provider: "p", modelId: "m" } as never);
     generateTextMock.mockResolvedValue({ text: "low" } as never);
     await runClassifier([{ model: "p/m", thinking: "low" }], [userMsg("go")], 0);
     expect(getBackendModelMock).toHaveBeenCalledWith("p", "m", "low", undefined);
   });
 
-  it("passes entry api through", async () => {
+  it("항목의 api를 그대로 전달한다", async () => {
     getBackendModelMock.mockResolvedValue({ model: "m", provider: "p", modelId: "m" } as never);
     generateTextMock.mockResolvedValue({ text: "low" } as never);
     await runClassifier([{ model: "p/m", api: "openai-responses" }], [userMsg("go")], 0);
     expect(getBackendModelMock).toHaveBeenCalledWith("p", "m", undefined, "openai-responses");
   });
 
-  it("records invalid model refs as attempt errors", async () => {
+  it("잘못된 모델 ref를 시도 에러로 기록한다", async () => {
     await expect(runClassifier([{ model: "bogus" }], [userMsg("go")], 0)).resolves.toBeUndefined();
     expect(getBackendModelMock).not.toHaveBeenCalled();
   });
 });
 
-describe("buildClassifierSystemPrompt", () => {
-  it("matches the legacy prompt by default", () => {
+describe("buildClassifierSystemPrompt 함수", () => {
+  it("기본적으로 기존 프롬프트와 일치한다", () => {
     expect(buildClassifierSystemPrompt()).toBe(CLASSIFIER_SYSTEM_PROMPT);
     expect(buildClassifierSystemPrompt({})).toBe(CLASSIFIER_SYSTEM_PROMPT);
   });
 
-  it("applies partial overrides and keeps defaults for the rest", () => {
+  it("일부 재정의값을 적용하고 나머지는 기본값을 유지한다", () => {
     const prompt = buildClassifierSystemPrompt({
       low: "Custom low work.",
       max: "Custom max work.",
@@ -203,7 +203,7 @@ describe("buildClassifierSystemPrompt", () => {
     expect(prompt).toContain(`- medium: ${DEFAULT_TIER_GUIDES.medium}`);
   });
 
-  it("passes tierGuides through to generateText", async () => {
+  it("tierGuides를 generateText에 전달한다", async () => {
     getBackendModelMock.mockResolvedValue({ model: "m", provider: "p", modelId: "m" } as never);
     generateTextMock.mockResolvedValue({ text: "high" } as never);
     const out = await runClassifier([{ model: "p/m" }], [userMsg("go")], 0, {
@@ -215,7 +215,7 @@ describe("buildClassifierSystemPrompt", () => {
     expect(system).toContain(`- low: ${DEFAULT_TIER_GUIDES.low}`);
   });
 
-  it("uses the default prompt when guides are omitted", async () => {
+  it("가이드가 생략되면 기본 프롬프트를 사용한다", async () => {
     getBackendModelMock.mockResolvedValue({ model: "m", provider: "p", modelId: "m" } as never);
     generateTextMock.mockResolvedValue({ text: "low" } as never);
     await runClassifier([{ model: "p/m" }], [userMsg("go")], 0);

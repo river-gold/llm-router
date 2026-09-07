@@ -27,8 +27,8 @@ import {
 } from "../src/routing/failureMemory";
 import type { RouterProfile } from "../src/types";
 
-describe("parseCanonicalModelRef", () => {
-  it("parses provider/model with thinking", () => {
+describe("parseCanonicalModelRef 함수", () => {
+  it("thinking이 있는 provider/모델을 파싱한다", () => {
     expect(parseCanonicalModelRef("openai/gpt-5#high")).toEqual({
       provider: "openai",
       modelId: "gpt-5",
@@ -36,18 +36,18 @@ describe("parseCanonicalModelRef", () => {
     });
   });
 
-  it("parses provider/model without thinking", () => {
+  it("thinking이 없는 provider/모델을 파싱한다", () => {
     expect(parseCanonicalModelRef("grok/grok-4")).toEqual({
       provider: "grok",
       modelId: "grok-4",
     });
   });
 
-  it("treats empty thinking suffix as absent", () => {
+  it("빈 thinking 접미사를 없음으로 취급한다", () => {
     expect(parseCanonicalModelRef("p/m#")).toEqual({ provider: "p", modelId: "m" });
   });
 
-  it("trims whitespace around provider, model, and thinking", () => {
+  it("provider, 모델, thinking 주변 공백을 다듬는다", () => {
     expect(parseCanonicalModelRef(" p / m # low ")).toEqual({
       provider: "p",
       modelId: "m",
@@ -55,42 +55,42 @@ describe("parseCanonicalModelRef", () => {
     });
   });
 
-  it("rejects refs without a slash", () => {
+  it("슬래시 없는 ref를 거부한다", () => {
     expect(() => parseCanonicalModelRef("gpt-5")).toThrow('Invalid model reference "gpt-5"');
   });
 
-  it("rejects empty provider or model", () => {
+  it("빈 provider나 모델을 거부한다", () => {
     expect(() => parseCanonicalModelRef("/m")).toThrow("Invalid model reference");
     expect(() => parseCanonicalModelRef("p/")).toThrow("Invalid model reference");
     expect(() => parseCanonicalModelRef(" / ")).toThrow("Invalid model reference");
   });
 
-  it("rejects unknown thinking", () => {
+  it("알 수 없는 thinking을 거부한다", () => {
     expect(() => parseCanonicalModelRef("p/m#ultra")).toThrow('Invalid thinking "ultra"');
   });
 });
 
-describe("formatModelRef", () => {
-  it("formats with and without thinking", () => {
+describe("formatModelRef 함수", () => {
+  it("thinking 유무에 따라 형식을 만든다", () => {
     expect(formatModelRef("p", "m", "low")).toBe("p/m#low");
     expect(formatModelRef("p", "m")).toBe("p/m");
   });
 });
 
-describe("isRouterTier", () => {
-  it("accepts tiers and rejects others", () => {
+describe("isRouterTier 함수", () => {
+  it("tier는 받아들이고 나머지는 거부한다", () => {
     expect(isRouterTier("high")).toBe(true);
     expect(isRouterTier("ultra")).toBe(false);
   });
 });
 
-describe("parseServerModel", () => {
-  it("parses profile-only and profile+tier", () => {
+describe("parseServerModel 함수", () => {
+  it("프로필만 있는 경우와 프로필+tier를 파싱한다", () => {
     expect(parseServerModel("router/balanced")).toEqual({ profile: "balanced" });
     expect(parseServerModel("router/grok/high")).toEqual({ profile: "grok", tier: "high" });
   });
 
-  it("rejects non-router, short, profile-less, and bad-tier models", () => {
+  it("router가 아니거나 짧거나 프로필 없거나 잘못된 tier 모델을 거부한다", () => {
     expect(() => parseServerModel("openai/x")).toThrow("Invalid router model");
     expect(() => parseServerModel("x")).toThrow("Invalid router model");
     expect(() => parseServerModel("router/")).toThrow("Missing profile");
@@ -98,8 +98,8 @@ describe("parseServerModel", () => {
   });
 });
 
-describe("thinkingToTier", () => {
-  it("maps every thinking level", () => {
+describe("thinkingToTier 함수", () => {
+  it("모든 thinking 수준을 매핑한다", () => {
     expect(thinkingToTier("max")).toBe("max");
     expect(thinkingToTier("xhigh")).toBe("xhigh");
     expect(thinkingToTier("high")).toBe("high");
@@ -110,35 +110,35 @@ describe("thinkingToTier", () => {
   });
 });
 
-describe("resolveAvailableTier", () => {
-  it("returns the preferred tier when configured", () => {
+describe("resolveAvailableTier 함수", () => {
+  it("설정된 선호 tier를 반환한다", () => {
     expect(resolveAvailableTier({ medium: {} }, "medium")).toBe("medium");
   });
 
-  it("searches upward then downward", () => {
+  it("위쪽부터 다음 아래쪽으로 찾는다", () => {
     expect(resolveAvailableTier({ high: {} }, "medium")).toBe("high");
     expect(resolveAvailableTier({ low: {} }, "medium")).toBe("low");
   });
 
-  it("returns preferred when nothing is configured", () => {
+  it("설정이 없으면 선호 tier를 반환한다", () => {
     expect(resolveAvailableTier({}, "medium")).toBe("medium");
   });
 });
 
-describe("toModelEntry", () => {
-  it("wraps shorthand strings and keeps objects", () => {
+describe("toModelEntry 함수", () => {
+  it("단축 문자열을 감싸고 객체는 유지한다", () => {
     expect(toModelEntry("openai/x#low")).toEqual({ model: "openai/x#low" });
     const entry = { model: "openai/x", thinking: "high" as const };
     expect(toModelEntry(entry)).toBe(entry);
   });
 });
 
-describe("buildRoutingDecision", () => {
+describe("buildRoutingDecision 함수", () => {
   const profile: RouterProfile = {
     medium: { models: [{ model: "openai/gpt-5#low", thinking: "high" }] },
   };
 
-  it("builds a decision from the primary ref thinking", () => {
+  it("주요 ref thinking에서 결정을 만든다", () => {
     const d = buildRoutingDecision("p", profile, "medium", "r", true);
     expect(d).toMatchObject({
       profile: "p",
@@ -153,7 +153,7 @@ describe("buildRoutingDecision", () => {
     expect(typeof d.timestamp).toBe("number");
   });
 
-  it("falls back to entry thinking when the ref has none", () => {
+  it("ref에 thinking이 없으면 항목 thinking으로 대체한다", () => {
     const d = buildRoutingDecision(
       "p",
       { medium: { models: [{ model: "openai/gpt-5", thinking: "high" }] } },
@@ -164,7 +164,7 @@ describe("buildRoutingDecision", () => {
     expect(d.isClassifier).toBeUndefined();
   });
 
-  it("throws for missing tier or missing models", () => {
+  it("tier나 모델이 없으면 예외를 던진다", () => {
     expect(() => buildRoutingDecision("p", {}, "medium", "r")).toThrow(
       'Profile "p" has no configuration for the medium tier.',
     );
@@ -177,20 +177,20 @@ describe("buildRoutingDecision", () => {
   });
 });
 
-describe("failureMemory", () => {
-  it("builds keys and normalizes refs", () => {
+describe("failureMemory 모듈", () => {
+  it("키를 만들고 ref를 정규화한다", () => {
     expect(chainKey("p", "low")).toBe("p/low");
     expect(normalizeRef("  a/b  ")).toBe("a/b");
   });
 
-  it("records and reports failures", () => {
+  it("실패를 기록하고 보고한다", () => {
     resetFailures();
     expect(failedRefs("p", "low").size).toBe(0);
     recordFailure("p", "low", "  openai/x  ");
     expect([...failedRefs("p", "low")]).toEqual(["openai/x"]);
   });
 
-  it("resets all and reports counts", () => {
+  it("전체를 초기화하고 개수를 보고한다", () => {
     resetFailures();
     recordFailure("a", "low", "m1");
     recordFailure("b", "high", "m2");
@@ -198,7 +198,7 @@ describe("failureMemory", () => {
     expect(resetFailures()).toBe(0);
   });
 
-  it("resets a single profile by exact or prefix match", () => {
+  it("정확히 또는 접두사로 단일 프로필을 초기화한다", () => {
     resetFailures();
     recordFailure("p1", "low", "m1");
     recordFailure("p1", "high", "m2");
@@ -211,20 +211,20 @@ describe("failureMemory", () => {
     expect(resetFailures("p2")).toBe(1);
   });
 
-  it("splits tried and skipped with normalization", () => {
+  it("정규화와 함께 시도분과 건너뜀분을 나눈다", () => {
     const { tried, skipped } = filterFailed(["a", " b "], new Set(["b"]));
     expect(tried).toEqual(["a"]);
     expect(skipped).toEqual([" b "]);
   });
 
-  it("stringifies errors for cooldown classification", () => {
+  it("쿨다운 분류를 위해 에러를 문자열화한다", () => {
     expect(errorText("raw")).toBe("raw");
     expect(errorText(new Error("boom"))).toBe("boom");
     expect(errorText({ message: "obj" })).toBe('{"message":"obj"}');
     expect(errorText(7)).toBe("7");
   });
 
-  it("cools down only rate-limit errors", () => {
+  it("속도 제한 에러에만 쿨다운을 적용한다", () => {
     const now = Date.parse("2026-09-06T13:00:00.000Z");
     expect(failureCooldownUntil("503 overloaded", now)).toBeNull();
     expect(failureCooldownUntil(new Error("aborted"), now)).toBeNull();
@@ -240,7 +240,7 @@ describe("failureMemory", () => {
     ).toBeNull();
   });
 
-  it("drops expired cooldowns and keeps the later until", () => {
+  it("만료된 쿨다운을 버리고 더 늦은 종료 시점을 유지한다", () => {
     resetFailures();
     const now = 1_000;
     recordFailure("p", "low", "a", now);
@@ -251,7 +251,7 @@ describe("failureMemory", () => {
     expect(failedRefs("p", "low", now + 10).size).toBe(0);
   });
 
-  it("reports retry time without a reset command", () => {
+  it("초기화 명령 없이 재시도 시점을 보고한다", () => {
     resetFailures();
     expect(nextRetryAt("p", "low", 1)).toBeUndefined();
     recordFailure("p", "low", "a", 50, 0);
@@ -267,8 +267,8 @@ describe("failureMemory", () => {
   });
 });
 
-describe("toModelMessages", () => {
-  it("converts system and developer messages", () => {
+describe("toModelMessages 함수", () => {
+  it("system과 developer 메시지를 변환한다", () => {
     const out = toModelMessages([
       { role: "system", content: "sys" },
       { role: "developer", content: "dev" },
@@ -281,7 +281,7 @@ describe("toModelMessages", () => {
     ]);
   });
 
-  it("converts user messages with text and images", () => {
+  it("텍스트와 이미지 포함 사용자 메시지를 변환한다", () => {
     const out = toModelMessages([
       { role: "user", content: "hi" },
       {
@@ -313,7 +313,7 @@ describe("toModelMessages", () => {
     ]);
   });
 
-  it("converts assistant messages with text and tool calls", () => {
+  it("텍스트와 도구 호출 포함 assistant 메시지를 변환한다", () => {
     const out = toModelMessages([
       { role: "assistant", content: "ans" },
       {
@@ -338,7 +338,7 @@ describe("toModelMessages", () => {
     });
   });
 
-  it("converts tool messages and resolves names", () => {
+  it("도구 메시지를 변환하고 이름을 결정한다", () => {
     const msgs: OpenAIMessage[] = [
       {
         role: "assistant",
@@ -371,7 +371,7 @@ describe("toModelMessages", () => {
     });
   });
 
-  it("skips unknown roles", () => {
+  it("알 수 없는 역할을 건너뛴다", () => {
     expect(toModelMessages([{ role: "function", content: "x" }])).toEqual([]);
   });
 });

@@ -27,8 +27,8 @@ const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {
 vi.spyOn(console, "log").mockImplementation(() => {});
 vi.spyOn(console, "error").mockImplementation(() => {});
 
-describe("entrypoint", () => {
-  it("reports entry errors", async () => {
+describe("entrypoint 진입점", () => {
+  it("진입점 에러를 보고한다", async () => {
     const mod = await import("../src/index");
     await expect(mod.entryPromise).resolves.toBeUndefined();
     await expect(mod.entrySettled).resolves.toEqual({ status: "skipped" });
@@ -41,15 +41,15 @@ describe("entrypoint", () => {
   });
 });
 
-describe("entrypoint-extra", () => {
-  it("exposes the default entry", async () => {
+describe("entrypoint-extra 진입점", () => {
+  it("기본 진입점을 노출한다", async () => {
     const mod = await import("../src/index");
     const entry = await mod.entryPromise;
     expect(entry).toBeUndefined();
     expect(mod.default).toBeUndefined();
   });
 
-  it("runs the entry outside vitest", async () => {
+  it("vitest 밖에서 진입점을 실행한다", async () => {
     const mod = await import("../src/index");
     await expect(
       mod.runEntry(Promise.resolve({ port: 1, hostname: "h", fetch: (() => {}) as never })),
@@ -68,8 +68,8 @@ describe("entrypoint-extra", () => {
   });
 });
 
-describe("startRouter", () => {
-  it("starts with defaults", async () => {
+describe("startRouter 함수", () => {
+  it("기본값으로 시작한다", async () => {
     const entry = await startRouter({});
     expect(entry).toMatchObject({ port: 4891, hostname: "127.0.0.1" });
     expect(typeof entry.fetch).toBe("function");
@@ -77,13 +77,13 @@ describe("startRouter", () => {
     expect(loadStateMock).toHaveBeenCalled();
   });
 
-  it("honors env port and config", async () => {
+  it("env 포트와 설정을 우선한다", async () => {
     const entry = await startRouter({ LLM_ROUTER_PORT: "5000", LLM_ROUTER_CONFIG: "c.json" });
     expect(entry.port).toBe(5000);
     expect(reloadConfigMock).toHaveBeenCalledWith("c.json");
   });
 
-  it("loads .env next to the config and applies the state path", async () => {
+  it("설정 옆의 .env를 로드하고 상태 경로를 적용한다", async () => {
     const loadEnvFileMock = vi.mocked(loadEnvFile);
     const setStatePathMock = vi.mocked(setStatePath);
     await startRouter({ LLM_ROUTER_CONFIG: "conf/r.json", LLM_ROUTER_STATE: "s.json" });
@@ -95,12 +95,12 @@ describe("startRouter", () => {
     expect(setStatePathMock).toHaveBeenCalledWith("s.json");
   });
 
-  it("wraps config failures as entry errors", async () => {
+  it("설정 실패를 진입점 에러로 감싼다", async () => {
     reloadConfigMock.mockRejectedValue(new Error("bad config"));
     await expect(startRouter({})).rejects.toThrow("[llm-router] bad config");
   });
 
-  it("reports real boot failures", async () => {
+  it("실제 부팅 실패를 보고한다", async () => {
     const exterior = await import("../src/index");
     const entryError = new exterior.EntryError("[llm-router] entry bad");
     await expect(exterior.settleEntryError(entryError)).rejects.toThrow("process.exit");
@@ -109,7 +109,7 @@ describe("startRouter", () => {
     await expect(exterior.settleEntryError(new Error("plain"))).rejects.toThrow("process.exit");
   });
 
-  it("runs main entries conditionally", async () => {
+  it("조건에 따라 main 진입점을 실행한다", async () => {
     const mod = await import("../src/index");
     await expect(mod.runMain({ main: true } as ImportMeta)).rejects.toThrow("process.exit");
     expect(mod.asEntryError(new Error("x"))).toBeInstanceOf(mod.EntryError);
@@ -117,7 +117,7 @@ describe("startRouter", () => {
     expect(mod.asEntryError(kept)).toBe(kept);
   });
 
-  it("reports non-entry run failures", async () => {
+  it("진입점이 아닌 실행 실패를 보고한다", async () => {
     const mod = await import("../src/index");
     await expect(mod.runEntry(Promise.reject(new Error("nope")))).rejects.toThrow("process.exit");
     expect(console.error).toHaveBeenCalledWith("Error: nope");
@@ -126,7 +126,7 @@ describe("startRouter", () => {
     ).resolves.toEqual({ port: 1, hostname: "h", fetch: expect.any(Function) });
   });
 
-  it("rejects unexpected entry failures", async () => {
+  it("예상치 못한 진입점 실패를 거부한다", async () => {
     const mod = await import("../src/index");
     await expect(mod.settleEntry(Promise.reject(new Error("boom")))).resolves.toEqual({
       status: "rejected",
@@ -137,7 +137,7 @@ describe("startRouter", () => {
     });
   });
 
-  it("settles entries without touching process.exit", async () => {
+  it("process.exit 없이 진입점을 종료 처리한다", async () => {
     const mod = await import("../src/index");
     await expect(mod.entrySettled).resolves.toEqual({ status: "skipped" });
     await expect(mod.settleEntry()).resolves.toEqual({ status: "skipped" });

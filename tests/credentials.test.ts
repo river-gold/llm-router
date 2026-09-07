@@ -41,14 +41,14 @@ afterEach(() => {
   }
 });
 
-describe("codexCli helpers", () => {
-  it("decodes account id and expiry from JWT", () => {
+describe("codexCli 헬퍼", () => {
+  it("JWT에서 account id와 만료를 디코딩한다", () => {
     const token = jwt({ "https://api.openai.com/auth": { chatgpt_account_id: "acc-1" }, exp: 999 });
     expect(accountIdFromJwt(token)).toBe("acc-1");
     expect(jwtExpiryMs(token)).toBe(999000);
   });
 
-  it("returns undefined for malformed tokens", () => {
+  it("형식이 잘못된 토큰에 대해 undefined를 반환한다", () => {
     expect(accountIdFromJwt("single")).toBeUndefined();
     expect(jwtExpiryMs("single")).toBeUndefined();
     expect(accountIdFromJwt("a.Zm9v.bar")).toBeUndefined();
@@ -62,14 +62,14 @@ describe("codexCli helpers", () => {
     expect(jwtExpiryMs("a.!!!.c")).toBeUndefined();
   });
 
-  it("resolves auth path from env or home", () => {
+  it("env 또는 홈에서 인증 경로를 결정한다", () => {
     process.env.CODEX_HOME = "/c";
     expect(codexAuthPath()).toBe("/c/auth.json");
     delete process.env.CODEX_HOME;
     expect(codexAuthPath()).toMatch(/\.codex\/auth\.json$/);
   });
 
-  it("reads credentials from file", async () => {
+  it("파일에서 credential을 읽는다", async () => {
     const token = jwt({
       "https://api.openai.com/auth": { chatgpt_account_id: "a" },
       exp: 2000000000,
@@ -81,7 +81,7 @@ describe("codexCli helpers", () => {
     expect(creds.expiresAt).toBe(2000000000000);
   });
 
-  it("derives account id from JWT when absent", async () => {
+  it("없으면 JWT에서 account id를 유도한다", async () => {
     const token = jwt({ "https://api.openai.com/auth": { chatgpt_account_id: "jwt-acc" } });
     store.set("/c2/auth.json", codexFile({ access_token: token }));
     const creds = await readCodexCredentials("/c2/auth.json");
@@ -89,7 +89,7 @@ describe("codexCli helpers", () => {
     expect(creds.expiresAt).toBeUndefined();
   });
 
-  it("throws for missing file, token, or account", async () => {
+  it("파일 누락, 토큰 누락, 계정 누락 시 예외를 던진다", async () => {
     await expect(readCodexCredentials("/nope.json")).rejects.toThrow("Codex auth not found");
     readFails = true;
     await expect(readCodexCredentials("/x.json")).rejects.toThrow("Run `codex login`");
@@ -103,15 +103,15 @@ describe("codexCli helpers", () => {
   });
 });
 
-describe("grokCli", () => {
-  it("resolves auth path from env or home", () => {
+describe("grokCli 모듈", () => {
+  it("env 또는 홈에서 인증 경로를 결정한다", () => {
     process.env.GROK_HOME = "/g";
     expect(grokAuthPath()).toBe("/g/auth.json");
     delete process.env.GROK_HOME;
     expect(grokAuthPath()).toMatch(/\.grok\/auth\.json$/);
   });
 
-  it("reads the auth.x.ai entry", async () => {
+  it("auth.x.ai 항목을 읽는다", async () => {
     store.set(
       "/g/auth.json",
       grokFile({
@@ -125,14 +125,14 @@ describe("grokCli", () => {
     expect(creds.expiresAt).toBe(Date.parse("2030-01-01T00:00:00.000Z"));
   });
 
-  it("falls back to the first entry without expiry", async () => {
+  it("만료 없이 첫 번째 항목으로 대체한다", async () => {
     store.set("/f.json", grokFile({ "https://other": { key: "k1" } }));
     const creds = await readGrokCredentials("/f.json");
     expect(creds.sessionKey).toBe("k1");
     expect(creds.expiresAt).toBeUndefined();
   });
 
-  it("throws for missing file, entries, or key", async () => {
+  it("파일 누락, 항목 누락, 키 누락 시 예외를 던진다", async () => {
     await expect(readGrokCredentials("/nope.json")).rejects.toThrow("Grok auth not found");
     store.set("/empty.json", grokFile({}));
     await expect(readGrokCredentials("/empty.json")).rejects.toThrow("No entries");
@@ -143,8 +143,8 @@ describe("grokCli", () => {
   });
 });
 
-describe("resolveCredential", () => {
-  it("prefers codex env credentials", async () => {
+describe("resolveCredential 함수", () => {
+  it("codex env credential을 우선한다", async () => {
     process.env.LLM_ROUTER_CODEX_TOKEN = "t";
     process.env.LLM_ROUTER_CODEX_ACCOUNT_ID = "a";
     expect(await resolveCredential("codex")).toEqual({
@@ -153,7 +153,7 @@ describe("resolveCredential", () => {
     });
   });
 
-  it("reads codex file credentials and rejects expired tokens", async () => {
+  it("codex 파일 credential을 읽고 만료된 토큰을 거부한다", async () => {
     process.env.LLM_ROUTER_CODEX_TOKEN = "t";
     await expect(resolveCredential("codex")).rejects.toThrow("Codex auth not found");
     delete process.env.LLM_ROUTER_CODEX_TOKEN;
@@ -171,7 +171,7 @@ describe("resolveCredential", () => {
     await expect(resolveCredential("codex")).rejects.toThrow("expired");
   });
 
-  it("resolves grok from env, file, and rejects expiry", async () => {
+  it("grok을 env, 파일에서 결정하고 만료를 거부한다", async () => {
     process.env.LLM_ROUTER_GROK_KEY = "gk";
     expect(await resolveCredential("grok")).toEqual({ kind: "grok", creds: { sessionKey: "gk" } });
     delete process.env.LLM_ROUTER_GROK_KEY;
@@ -185,13 +185,13 @@ describe("resolveCredential", () => {
     await expect(resolveCredential("grok")).rejects.toThrow("expired");
   });
 
-  it("resolves generic providers from env", async () => {
+  it("범용 provider를 env에서 결정한다", async () => {
     await expect(resolveCredential("openai")).rejects.toThrow("OPENAI_API_KEY");
     process.env.OPENAI_API_KEY = "sk-x";
     expect(await resolveCredential("openai")).toEqual({ kind: "apiKey", key: "sk-x" });
   });
 
-  it("normalizes hyphens in provider names to underscores", async () => {
+  it("provider 이름의 하이픈을 언더스코어로 정규화한다", async () => {
     expect(envPrefix("opencode-go")).toBe("OPENCODE_GO");
     await expect(resolveCredential("opencode-go")).rejects.toThrow("OPENCODE_GO_API_KEY");
     process.env.OPENCODE_GO_API_KEY = "sk-y";

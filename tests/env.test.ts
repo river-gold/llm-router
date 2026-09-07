@@ -17,8 +17,8 @@ afterEach(() => {
   files.clear();
 });
 
-describe("parseEnvText", () => {
-  it("parses assignments, exports, and comments", () => {
+describe("parseEnvText 함수", () => {
+  it("할당, export, 주석을 파싱한다", () => {
     const parsed = parseEnvText(
       [
         "# comment",
@@ -45,27 +45,27 @@ describe("parseEnvText", () => {
     expect(parsed).not.toHaveProperty("NOEQ");
   });
 
-  it("keeps unterminated quotes literal", () => {
+  it("닫히지 않은 따옴표를 문자 그대로 유지한다", () => {
     expect(parseEnvText('HALF="abc')).toEqual({ HALF: '"abc' });
   });
 });
 
-describe("resolveEnvPath", () => {
-  it("places .env next to the config file", () => {
+describe("resolveEnvPath 함수", () => {
+  it("설정 파일 옆에 .env를 둔다", () => {
     expect(resolveEnvPath("./config/model-router.jsonc")).toBe("config/.env");
     expect(resolveEnvPath("router.json")).toBe(".env");
   });
 });
 
-describe("loadEnvFile", () => {
-  it("sets missing keys and reports them", async () => {
+describe("loadEnvFile 함수", () => {
+  it("없는 키를 설정하고 보고한다", async () => {
     files.set("a.env", "ONE=1\nTWO=2");
     const env: NodeJS.ProcessEnv = { TWO: "keep" };
     expect(await loadEnvFile(env, "a.env")).toEqual(["ONE"]);
     expect(env).toMatchObject({ ONE: "1", TWO: "keep" });
   });
 
-  it("ignores missing files", async () => {
+  it("없는 파일을 무시한다", async () => {
     expect(await loadEnvFile({}, "nope.env")).toEqual([]);
   });
 });

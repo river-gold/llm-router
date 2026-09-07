@@ -25,8 +25,8 @@ const decision = (id: string) => ({
   timestamp: 1,
 });
 
-describe("state", () => {
-  it("loads persisted state with defaults for missing fields", async () => {
+describe("state 모듈", () => {
+  it("누락된 필드에 기본값을 두고 저장된 상태를 로드한다", async () => {
     vi.resetModules();
     delete process.env.LLM_ROUTER_STATE;
     const mod = await import("../src/state");
@@ -42,7 +42,7 @@ describe("state", () => {
     expect(snap.totalTokens).toBe(3);
   });
 
-  it("honors LLM_ROUTER_STATE at import time", async () => {
+  it("가져오기 시점에 LLM_ROUTER_STATE를 우선한다", async () => {
     vi.resetModules();
     process.env.LLM_ROUTER_STATE = "custom.json";
     const mod = await import("../src/state");
@@ -52,7 +52,7 @@ describe("state", () => {
     delete process.env.LLM_ROUTER_STATE;
   });
 
-  it("starts fresh when no state file exists", async () => {
+  it("상태 파일이 없으면 새로 시작한다", async () => {
     vi.resetModules();
     const mod = await import("../src/state");
     stored = undefined;
@@ -61,7 +61,7 @@ describe("state", () => {
     expect(mod.snapshot().totalTokens).toBe(0);
   });
 
-  it("accumulates usage, caps debug history, and tolerates write failure", async () => {
+  it("사용량을 누적하고 디버그 히스토리를 제한하며 쓰기 실패를 허용한다", async () => {
     vi.resetModules();
     const mod = await import("../src/state");
     stored = undefined;
@@ -84,7 +84,7 @@ describe("state", () => {
     writeFails = false;
   });
 
-  it("loads full persisted state", async () => {
+  it("저장된 전체 상태를 로드한다", async () => {
     vi.resetModules();
     const mod = await import("../src/state");
     const d = decision("full");

@@ -25,22 +25,22 @@ afterEach(() => {
   delete process.env.LLM_ROUTER_CONFIG;
 });
 
-describe("loadConfig", () => {
-  it("loads from an explicit path", async () => {
+describe("loadConfig 함수", () => {
+  it("명시적 경로에서 로드한다", async () => {
     files.set("r.json", VALID);
     const { config, warnings } = await loadConfig("r.json");
     expect(Object.keys(config.profiles)).toEqual(["balanced"]);
     expect(warnings).toEqual([]);
   });
 
-  it("prefers explicit path over env", async () => {
+  it("명시적 경로를 env보다 우선한다", async () => {
     files.set("a.json", VALID);
     files.set("b.json", VALID);
     process.env.LLM_ROUTER_CONFIG = "b.json";
     await loadConfig("a.json");
   });
 
-  it("falls back to env then default path", async () => {
+  it("env 다음 기본 경로로 대체한다", async () => {
     files.set("env.json", VALID);
     process.env.LLM_ROUTER_CONFIG = "env.json";
     await loadConfig();
@@ -49,7 +49,7 @@ describe("loadConfig", () => {
     await loadConfig();
   });
 
-  it("tolerates trailing commas", async () => {
+  it("후행 쉼표를 허용한다", async () => {
     files.set(
       "trail.jsonc",
       '{ "profiles": { "p": { "medium": { "models": ["openai/x"], }, }, }, }',
@@ -58,32 +58,32 @@ describe("loadConfig", () => {
     expect(Object.keys(config.profiles)).toEqual(["p"]);
   });
 
-  it("strips // comments", async () => {
+  it("// 주석을 제거한다", async () => {
     files.set("c.json", "// top comment\n" + VALID + "\n// bottom comment\n");
     const { config } = await loadConfig("c.json");
     expect(Object.keys(config.profiles)).toEqual(["balanced"]);
   });
 
-  it("handles lines without comments", async () => {
+  it("주석 없는 줄을 처리한다", async () => {
     files.set("plain.json", VALID);
     await loadConfig("plain.json");
   });
 
-  it("throws on unreadable file", async () => {
+  it("읽을 수 없는 파일에서 예외를 던진다", async () => {
     readError = "denied";
     await expect(loadConfig("x.json")).rejects.toThrow(
       'Cannot read router config "x.json": denied',
     );
   });
 
-  it("throws on invalid JSON", async () => {
+  it("잘못된 JSON에서 예외를 던진다", async () => {
     files.set("bad.json", "{oops");
     await expect(loadConfig("bad.json")).rejects.toThrow(
       'Invalid JSON in router config "bad.json"',
     );
   });
 
-  it("throws on schema violations", async () => {
+  it("스키마 위반에서 예외를 던진다", async () => {
     files.set("tierless.json", JSON.stringify({ profiles: { p: {} } }));
     await expect(loadConfig("tierless.json")).rejects.toThrow("Invalid router config");
     files.set(
@@ -102,7 +102,7 @@ describe("loadConfig", () => {
     await expect(loadConfig("badapi.json")).rejects.toThrow("Invalid router config");
   });
 
-  it("loads string classifier shorthands", async () => {
+  it("문자열 분류기 단축 표기를 로드한다", async () => {
     files.set(
       "clf.json",
       JSON.stringify({
@@ -120,7 +120,7 @@ describe("loadConfig", () => {
     ]);
   });
 
-  it("loads model entry api and thinking", async () => {
+  it("모델 항목의 api와 thinking을 로드한다", async () => {
     files.set(
       "api.json",
       JSON.stringify({
@@ -139,7 +139,7 @@ describe("loadConfig", () => {
     ]);
   });
 
-  it("loads full and partial tierGuides", async () => {
+  it("전체와 부분 tierGuides를 로드한다", async () => {
     files.set(
       "guides.json",
       JSON.stringify({
@@ -174,7 +174,7 @@ describe("loadConfig", () => {
     expect(partial.config.tierGuides).toEqual({ low: "Custom low." });
   });
 
-  it("trims tierGuides values", async () => {
+  it("tierGuides 값을 다듬는다", async () => {
     files.set(
       "trim.json",
       JSON.stringify({
@@ -186,7 +186,7 @@ describe("loadConfig", () => {
     expect(config.tierGuides).toEqual({ low: "ok" });
   });
 
-  it("throws on empty tierGuides values", async () => {
+  it("빈 tierGuides 값에서 예외를 던진다", async () => {
     files.set(
       "empty.json",
       JSON.stringify({
@@ -197,7 +197,7 @@ describe("loadConfig", () => {
     await expect(loadConfig("empty.json")).rejects.toThrow("Invalid router config");
   });
 
-  it("throws on whitespace-only tierGuides values", async () => {
+  it("공백만 있는 tierGuides 값에서 예외를 던진다", async () => {
     files.set(
       "blank.json",
       JSON.stringify({
@@ -210,7 +210,7 @@ describe("loadConfig", () => {
     );
   });
 
-  it("throws on non-string tierGuides values", async () => {
+  it("문자열이 아닌 tierGuides 값에서 예외를 던진다", async () => {
     files.set(
       "nonstring.json",
       JSON.stringify({
@@ -221,7 +221,7 @@ describe("loadConfig", () => {
     await expect(loadConfig("nonstring.json")).rejects.toThrow("Invalid router config");
   });
 
-  it("throws on non-object tierGuides", async () => {
+  it("객체가 아닌 tierGuides에서 예외를 던진다", async () => {
     files.set(
       "bad.json",
       JSON.stringify({
@@ -232,7 +232,7 @@ describe("loadConfig", () => {
     await expect(loadConfig("bad.json")).rejects.toThrow("Invalid router config");
   });
 
-  it("throws on unknown tierGuides keys", async () => {
+  it("알 수 없는 tierGuides 키에서 예외를 던진다", async () => {
     files.set(
       "unknown.json",
       JSON.stringify({
@@ -243,7 +243,7 @@ describe("loadConfig", () => {
     await expect(loadConfig("unknown.json")).rejects.toThrow("Invalid router config");
   });
 
-  it("drops tier-level thinking and api", async () => {
+  it("tier 수준의 thinking과 api를 버린다", async () => {
     files.set(
       "tiertop.json",
       JSON.stringify({
@@ -257,13 +257,13 @@ describe("loadConfig", () => {
   });
 });
 
-describe("configuredTiers / singleTier", () => {
-  it("lists configured tiers", () => {
+describe("configuredTiers / singleTier 함수", () => {
+  it("설정된 tier 목록을 나열한다", () => {
     expect(configuredTiers({ low: {}, max: {} })).toEqual(["low", "max"]);
     expect(configuredTiers({})).toEqual([]);
   });
 
-  it("detects single-tier profiles", () => {
+  it("단일 tier 프로필을 감지한다", () => {
     expect(singleTier({ low: {} })).toBe("low");
     expect(singleTier({})).toBeUndefined();
     expect(singleTier({ low: {}, high: {} })).toBeUndefined();

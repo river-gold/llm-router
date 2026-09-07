@@ -69,8 +69,8 @@ const collect = async (gen: AsyncGenerator<{ type: string }>): Promise<string[]>
   return types;
 };
 
-describe("resolveTier", () => {
-  it("honors explicit tiers including fallback resolution", async () => {
+describe("resolveTier 함수", () => {
+  it("대체 결정을 포함해 명시적 tier를 우선한다", async () => {
     const direct = await resolveTier(config, "balanced", profile, {
       explicitTier: "low",
       messages: baseReq().messages,
@@ -87,7 +87,7 @@ describe("resolveTier", () => {
     expect(resolved.decision.reasoning).toContain("resolved to");
   });
 
-  it("skips classification for single-tier profiles", async () => {
+  it("단일 tier 프로필에서는 분류를 건너뛴다", async () => {
     const out = await resolveTier(
       config,
       "balanced",
@@ -98,7 +98,7 @@ describe("resolveTier", () => {
     expect(runClassifierMock).not.toHaveBeenCalled();
   });
 
-  it("maps reasoning effort to tiers", async () => {
+  it("reasoning effort를 tier에 매핑한다", async () => {
     const full: RouterProfile = {
       minimal: { models: ["openai/a"] },
       low: { models: ["openai/a"] },
@@ -128,7 +128,7 @@ describe("resolveTier", () => {
     expect(runClassifierMock).not.toHaveBeenCalled();
   });
 
-  it("uses the classifier when available", async () => {
+  it("사용 가능할 때 분류기를 사용한다", async () => {
     runClassifierMock.mockResolvedValue({ tier: "low", attempts: [] });
     const cfg: RouterConfig = {
       profiles: { balanced: { ...profile, classifierModels: [{ model: "openai/clf" }] } },
@@ -145,7 +145,7 @@ describe("resolveTier", () => {
     expect(out.classifierUsed).toBe(true);
   });
 
-  it("resolves classifier tiers to available ones", async () => {
+  it("분류기 tier를 사용 가능한 tier로 결정한다", async () => {
     runClassifierMock.mockResolvedValue({ tier: "max", attempts: [] });
     const two: RouterProfile = {
       low: { models: ["openai/a"] },
@@ -158,7 +158,7 @@ describe("resolveTier", () => {
     expect(out.decision.reasoning).toContain("resolved to");
   });
 
-  it("uses global classifier models", async () => {
+  it("전역 분류기 모델을 사용한다", async () => {
     runClassifierMock.mockResolvedValue({ tier: "medium", attempts: [] });
     const cfg: RouterConfig = {
       profiles: { balanced: profile },
@@ -168,7 +168,7 @@ describe("resolveTier", () => {
     expect(out.classifierUsed).toBe(true);
   });
 
-  it("forwards config tierGuides to the classifier", async () => {
+  it("설정의 tierGuides를 분류기에 전달한다", async () => {
     runClassifierMock.mockResolvedValue({ tier: "low", attempts: [] });
     const tierGuides = { low: "Custom low." };
     const cfg: RouterConfig = {
@@ -187,7 +187,7 @@ describe("resolveTier", () => {
     );
   });
 
-  it("defaults to medium when the classifier is skipped or fails", async () => {
+  it("분류기를 건너뛰거나 실패하면 medium을 기본값으로 사용한다", async () => {
     runClassifierMock.mockResolvedValue(undefined);
     const toolReq = baseReq({ messages: [{ role: "tool", content: [] } as never] });
     const skipped = await resolveTier(
@@ -213,14 +213,14 @@ describe("resolveTier", () => {
   });
 });
 
-describe("routeRequest", () => {
-  it("rejects unknown profiles", async () => {
+describe("routeRequest 함수", () => {
+  it("알 수 없는 프로필을 거부한다", async () => {
     await expect(collect(routeRequest(config, baseReq({ profile: "nope" })))).rejects.toThrow(
       'Unknown profile "nope"',
     );
   });
 
-  it("rejects when every model is in cooldown", async () => {
+  it("모든 모델이 쿨다운 중일 때 거부한다", async () => {
     const { recordFailure, resetFailures } = await import("../src/routing/failureMemory");
     resetFailures("balanced");
     recordFailure("balanced", "low", "openai/a#low");
@@ -231,7 +231,7 @@ describe("routeRequest", () => {
     resetFailures("balanced");
   });
 
-  it("streams text and records the decision", async () => {
+  it("텍스트를 스트리밍하고 결정을 기록한다", async () => {
     streamTextMock.mockImplementationOnce(
       () =>
         streamOf([
@@ -260,7 +260,7 @@ describe("routeRequest", () => {
     );
   });
 
-  it("passes tools, choice, and limits through", async () => {
+  it("도구, 선택값, 제한을 그대로 전달한다", async () => {
     streamTextMock.mockImplementationOnce(
       () =>
         streamOf([
@@ -304,7 +304,7 @@ describe("routeRequest", () => {
     );
   });
 
-  it("falls back to the next model on pre-content failure", async () => {
+  it("콘텐츠 출력 전 실패 시 다음 모델으로 대체한다", async () => {
     const okStream = () =>
       streamOf([
         { type: "text-delta", text: "ok" },
@@ -330,7 +330,7 @@ describe("routeRequest", () => {
     );
   });
 
-  it("fails all models and reports the last error", async () => {
+  it("모든 모델이 실패하고 마지막 에러를 보고한다", async () => {
     const down = (): never => {
       throw new Error("down");
     };
@@ -340,7 +340,7 @@ describe("routeRequest", () => {
     );
   });
 
-  it("does not skip models after a transient 503", async () => {
+  it("일시적인 503 이후에도 모델을 건너뛰지 않는다", async () => {
     const overloaded = () =>
       streamOf([
         {
@@ -360,7 +360,7 @@ describe("routeRequest", () => {
     expect(streamTextMock).toHaveBeenCalledTimes(4);
   });
 
-  it("skips only the rate-limited model on the next request", async () => {
+  it("다음 요청에서 속도 제한된 모델만 건너뛴다", async () => {
     const limited = () =>
       streamOf([
         {
@@ -385,7 +385,7 @@ describe("routeRequest", () => {
     expect(streamTextMock).toHaveBeenCalledTimes(1);
   });
 
-  it("handles streams ending without a terminal event", async () => {
+  it("종료 이벤트 없이 끝나는 스트림을 처리한다", async () => {
     const unfinished = () =>
       streamOf([
         { type: "text-delta", text: "x" },
@@ -402,7 +402,7 @@ describe("routeRequest", () => {
     );
   });
 
-  it("propagates stream errors and mid-stream failures as non-retryable", async () => {
+  it("스트림 에러와 중간 실패를 재시도 불가로 전파한다", async () => {
     streamTextMock
       .mockImplementationOnce(() => streamOf([{ type: "error", error: new Error("bad") }]) as never)
       .mockImplementationOnce(
@@ -417,7 +417,7 @@ describe("routeRequest", () => {
     );
   });
 
-  it("ignores unknown stream parts", async () => {
+  it("알 수 없는 스트림 조각을 무시한다", async () => {
     streamTextMock.mockImplementation(
       () =>
         streamOf([
@@ -433,7 +433,7 @@ describe("routeRequest", () => {
     expect(events.map((e) => (e as { type: string }).type)).toEqual(["text-delta", "done"]);
   });
 
-  it("retries unfinished streams on the next model", async () => {
+  it("미완성 스트림을 다음 모델에서 재시도한다", async () => {
     getBackendModelMock.mockImplementation(async () => ({ model: "m" }) as never);
     const unfinishedStream = () =>
       streamOf([
@@ -469,7 +469,7 @@ describe("routeRequest", () => {
     );
   });
 
-  it("reports runAttempt statuses", async () => {
+  it("runAttempt 상태를 보고한다", async () => {
     const tiny = { low: { models: ["openai/z"] } };
     const orphan: RoutingDecision = {
       profile: "p",
@@ -520,7 +520,7 @@ describe("routeRequest", () => {
     );
   });
 
-  it("uses candidate fallback refs for model-less tiers", async () => {
+  it("모델 없는 tier에 후보 대체 ref를 사용한다", async () => {
     const orphan: RoutingDecision = {
       profile: "p",
       tier: "low",
@@ -537,7 +537,7 @@ describe("routeRequest", () => {
     ]);
   });
 
-  it("attempts models with missing tier config", async () => {
+  it("tier 설정이 없어도 모델을 시도한다", async () => {
     const done = () =>
       streamOf([
         { type: "text-delta", text: "x" },

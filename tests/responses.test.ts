@@ -36,15 +36,15 @@ const done = (finishReason = "stop") =>
     },
   ]);
 
-describe("toModelMessagesFromResponses", () => {
-  it("maps string input with instructions", () => {
+describe("toModelMessagesFromResponses 함수", () => {
+  it("instructions와 함께 문자열 입력을 매핑한다", () => {
     expect(toModelMessagesFromResponses("hello", "be brief")).toEqual([
       { role: "system", content: "be brief" },
       { role: "user", content: [{ type: "text", text: "hello" }] },
     ]);
   });
 
-  it("maps item lists across roles and tool history", () => {
+  it("여러 역할과 도구 히스토리에 걸쳐 항목 목록을 매핑한다", () => {
     const messages = toModelMessagesFromResponses([
       { role: "system", content: "sys" },
       { role: "developer", content: [{ type: "input_text", text: "dev" }] },
@@ -105,7 +105,7 @@ describe("toModelMessagesFromResponses", () => {
     ]);
   });
 
-  it("tolerates malformed content and arguments", () => {
+  it("잘못된 콘텐츠와 인자를 너그럽게 처리한다", () => {
     const messages = toModelMessagesFromResponses([
       { role: "user", content: "x" },
       {
@@ -180,13 +180,13 @@ describe("toModelMessagesFromResponses", () => {
     expect(messages[9]).toEqual({ role: "system", content: "d" });
   });
 
-  it("skips empty string input", () => {
+  it("빈 문자열 입력을 건너뛴다", () => {
     expect(toModelMessagesFromResponses("", "sys")).toEqual([{ role: "system", content: "sys" }]);
   });
 });
 
-describe("responsesToolsToToolSet / responsesToolChoice", () => {
-  it("converts function tools and drops others", () => {
+describe("responsesToolsToToolSet / responsesToolChoice 함수", () => {
+  it("function 도구를 변환하고 나머지는 버린다", () => {
     const tools = responsesToolsToToolSet([
       { type: "function", name: "f", description: "d", parameters: {} },
       { type: "web_search" },
@@ -200,7 +200,7 @@ describe("responsesToolsToToolSet / responsesToolChoice", () => {
     expect(responsesToolsToToolSet([{ type: "web_search", name: "w" } as never])).toBeUndefined();
   });
 
-  it("maps tool choice values", () => {
+  it("도구 선택 값을 매핑한다", () => {
     expect(responsesToolChoice("auto")).toBe("auto");
     expect(responsesToolChoice("none")).toBe("none");
     expect(responsesToolChoice("required")).toBe("required");
@@ -212,8 +212,8 @@ describe("responsesToolsToToolSet / responsesToolChoice", () => {
   });
 });
 
-describe("collectRouteEvents", () => {
-  it("drains text, reasoning, tool calls, and usage", async () => {
+describe("collectRouteEvents 함수", () => {
+  it("텍스트, reasoning, 도구 호출, 사용량을 모은다", async () => {
     const collected = await collectRouteEvents(
       streamOf([
         { type: "text-delta", text: "a" },
@@ -241,7 +241,7 @@ describe("collectRouteEvents", () => {
     });
   });
 
-  it("merges split name updates", async () => {
+  it("분할된 이름 업데이트를 병합한다", async () => {
     const collected = await collectRouteEvents(
       streamOf([
         { type: "tool-call-delta", id: "t", name: "a" },
@@ -280,7 +280,7 @@ describe("collectRouteEvents", () => {
     expect(emptyDelta.toolCalls).toEqual([{ id: "v", name: "w", args: "" }]);
   });
 
-  it("covers argument and output coercions", () => {
+  it("인자와 출력 강제 변환을 다룬다", () => {
     expect(
       toModelMessagesFromResponses([
         { type: "function_call", name: "f", arguments: '{"a":1}' },
@@ -301,8 +301,8 @@ describe("collectRouteEvents", () => {
   });
 });
 
-describe("buildResponsesResponse", () => {
-  it("builds completed and incomplete responses", () => {
+describe("buildResponsesResponse 함수", () => {
+  it("완료된 응답과 미완성 응답을 만든다", () => {
     const full = buildResponsesResponse({
       model: "router/balanced",
       text: "hi",
@@ -330,7 +330,7 @@ describe("buildResponsesResponse", () => {
     expect(incomplete.output.map((o) => o.type)).toEqual(["message"]);
   });
 
-  it("fills defaults without tool calls or reasoning", () => {
+  it("도구 호출이나 reasoning 없이 기본값을 채운다", () => {
     const res = buildResponsesResponse({ model: "router/balanced", text: "" }) as {
       model: string;
       usage: Record<string, number>;
@@ -340,8 +340,8 @@ describe("buildResponsesResponse", () => {
   });
 });
 
-describe("pipeToResponsesStream", () => {
-  it("emits created, deltas, and completed without a DONE terminator", async () => {
+describe("pipeToResponsesStream 함수", () => {
+  it("DONE 종결자 없이 created, 델타, completed을 내보낸다", async () => {
     const seen: Array<{ event: string; data: Record<string, unknown> }> = [];
     await pipeToResponsesStream(done(), "router/balanced", (event, data) => {
       seen.push({ event, data: data as Record<string, unknown> });
@@ -369,7 +369,7 @@ describe("pipeToResponsesStream", () => {
     ).toBe(true);
   });
 
-  it("streams reasoning and split tool calls", async () => {
+  it("reasoning과 분할된 도구 호출을 스트리밍한다", async () => {
     const seen: string[] = [];
     await pipeToResponsesStream(
       streamOf([
@@ -412,7 +412,7 @@ describe("pipeToResponsesStream", () => {
     ]);
   });
 
-  it("streams a nameless tool call without emitting an empty delta", async () => {
+  it("빈 델타를 내보내지 않고 이름 없는 도구 호출을 스트리밍한다", async () => {
     const seen: string[] = [];
     await pipeToResponsesStream(
       streamOf([
@@ -436,7 +436,7 @@ describe("pipeToResponsesStream", () => {
     ]);
   });
 
-  it("reports mid-stream failures as response.failed", async () => {
+  it("중간 스트림 실패를 response.failed로 보고한다", async () => {
     const seen: Array<{ event: string; data: unknown }> = [];
     await pipeToResponsesStream(rejectingStream(new Error("boom")), "router/balanced", (e, d) => {
       seen.push({ event: e, data: d });

@@ -61,8 +61,8 @@ beforeEach(() => {
   } as never);
 });
 
-describe("reloadConfig", () => {
-  it("loads with and without path", async () => {
+describe("reloadConfig 함수", () => {
+  it("경로 유무에 따라 로드한다", async () => {
     await reloadConfig("a.json");
     expect(loadConfigMock).toHaveBeenCalledWith("a.json");
     await reloadConfig();
@@ -73,8 +73,8 @@ describe("reloadConfig", () => {
   });
 });
 
-describe("GET /v1/models", () => {
-  it("lists profiles", async () => {
+describe("GET /v1/models 엔드포인트", () => {
+  it("프로필 목록을 나열한다", async () => {
     await reloadConfig("a.json");
     const res = await app.request("/v1/models");
     expect(res.status).toBe(200);
@@ -85,25 +85,25 @@ describe("GET /v1/models", () => {
   });
 });
 
-describe("POST /v1/chat/completions", () => {
-  it("rejects invalid JSON", async () => {
+describe("POST /v1/chat/completions 엔드포인트", () => {
+  it("잘못된 JSON을 거부한다", async () => {
     const res = await app.request(chat("{bad"));
     expect(res.status).toBe(400);
   });
 
-  it("rejects missing model/messages", async () => {
+  it("누락된 model/messages를 거부한다", async () => {
     for (const body of [{}, { model: "router/balanced" }, { messages: [] }]) {
       const res = await app.request(chat(body));
       expect(res.status).toBe(400);
     }
   });
 
-  it("rejects non-router models", async () => {
+  it("router가 아닌 모델을 거부한다", async () => {
     const res = await app.request(chat({ model: "openai/x", messages: [] }));
     expect(res.status).toBe(404);
   });
 
-  it("returns non-stream completions with text", async () => {
+  it("텍스트 포함 비스트리밍 응답을 반환한다", async () => {
     await reloadConfig("a.json");
     routeRequestMock.mockReturnValue(
       streamOf([
@@ -129,7 +129,7 @@ describe("POST /v1/chat/completions", () => {
     expect(body.usage.prompt_tokens).toBe(1);
   });
 
-  it("accumulates split tool calls and null content", async () => {
+  it("분할된 도구 호출과 null 콘텐츠를 누적한다", async () => {
     await reloadConfig("a.json");
     routeRequestMock.mockReturnValue(
       streamOf([
@@ -174,7 +174,7 @@ describe("POST /v1/chat/completions", () => {
     expect(passthroughTools).toHaveBeenCalled();
   });
 
-  it("maps object tool_choice without tools", async () => {
+  it("도구 없이 객체 tool_choice를 매핑한다", async () => {
     await reloadConfig("a.json");
     routeRequestMock.mockReturnValue(
       streamOf([
@@ -192,7 +192,7 @@ describe("POST /v1/chat/completions", () => {
     expect(res.status).toBe(200);
   });
 
-  it("returns router errors with custom status", async () => {
+  it("사용자 정의 상태로 라우터 에러를 반환한다", async () => {
     await reloadConfig("a.json");
     routeRequestMock.mockReturnValue(
       rejectingIterator(Object.assign(new Error("denied"), { status: 403 })) as never,
@@ -201,14 +201,14 @@ describe("POST /v1/chat/completions", () => {
     expect(res.status).toBe(403);
   });
 
-  it("returns router errors with default status", async () => {
+  it("기본 상태로 라우터 에러를 반환한다", async () => {
     await reloadConfig("a.json");
     routeRequestMock.mockReturnValue(rejectingIterator(new Error("boom")) as never);
     const res = await app.request(chat({ model: "router/balanced", messages: [] }));
     expect(res.status).toBe(500);
   });
 
-  it("rejects invalid responses payloads", async () => {
+  it("잘못된 responses 페이로드를 거부한다", async () => {
     await reloadConfig("a.json");
     const bad = await app.request(responses("{bad"));
     expect(bad.status).toBe(400);
@@ -227,7 +227,7 @@ describe("POST /v1/chat/completions", () => {
     expect(bg.status).toBe(400);
   });
 
-  it("streams SSE events including errors", async () => {
+  it("에러 포함 SSE 이벤트를 스트리밍한다", async () => {
     await reloadConfig("a.json");
     routeRequestMock.mockReturnValueOnce(
       streamOf([
@@ -273,8 +273,8 @@ describe("POST /v1/chat/completions", () => {
   });
 });
 
-describe("POST /v1/responses", () => {
-  it("returns a response object without streaming", async () => {
+describe("POST /v1/responses 엔드포인트", () => {
+  it("스트리밍 없이 응답 객체를 반환한다", async () => {
     await reloadConfig("a.json");
     routeRequestMock.mockReturnValue(
       streamOf([
@@ -313,7 +313,7 @@ describe("POST /v1/responses", () => {
     expect(routeRequest).toHaveBeenCalled();
   });
 
-  it("supports string input and reasoning_effort", async () => {
+  it("문자열 입력과 reasoning_effort를 지원한다", async () => {
     await reloadConfig("a.json");
     routeRequestMock.mockReturnValue(streamOf([]) as never);
     const res = await app.request(
@@ -337,7 +337,7 @@ describe("POST /v1/responses", () => {
     expect(streamedTier.status).toBe(200);
   });
 
-  it("maps router failures to router_error", async () => {
+  it("라우터 실패를 router_error에 매핑한다", async () => {
     await reloadConfig("a.json");
     routeRequestMock.mockReturnValueOnce(
       rejectingIterator(Object.assign(new Error("denied"), { status: 403 })) as never,
@@ -349,7 +349,7 @@ describe("POST /v1/responses", () => {
     expect(failed.status).toBe(500);
   });
 
-  it("streams responses SSE ending with response.completed", async () => {
+  it("response.completed로 끝나는 responses SSE를 스트리밍한다", async () => {
     await reloadConfig("a.json");
     routeRequestMock.mockReturnValueOnce(
       streamOf([
@@ -388,8 +388,8 @@ describe("POST /v1/responses", () => {
   });
 });
 
-describe("router admin", () => {
-  it("serves status and debug", async () => {
+describe("router 관리", () => {
+  it("상태와 디버그를 제공한다", async () => {
     await reloadConfig("a.json");
     const status = await app.request("/router/status");
     expect(status.status).toBe(200);
@@ -401,7 +401,7 @@ describe("router admin", () => {
     expect(loadState).toHaveBeenCalled();
   });
 
-  it("reloads config with success and failure", async () => {
+  it("성공과 실패로 설정을 다시 로드한다", async () => {
     loadConfigMock.mockResolvedValue({ config: cfg, warnings: [] } as never);
     const ok = await app.request("/router/reload", { method: "POST" });
     expect(ok.status).toBe(200);
@@ -410,7 +410,7 @@ describe("router admin", () => {
     expect(bad.status).toBe(500);
   });
 
-  it("resets failures with and without JSON", async () => {
+  it("JSON 유무에 따라 실패 기록을 초기화한다", async () => {
     const withBody = await app.request("/router/reset-failures", {
       method: "POST",
       headers: { "content-type": "application/json" },

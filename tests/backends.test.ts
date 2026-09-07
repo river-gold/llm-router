@@ -25,8 +25,8 @@ beforeEach(() => {
   createOpenAIMock.mockImplementation(providerStub as never);
 });
 
-describe("thinkingToEffort", () => {
-  it("maps thinking to effort", () => {
+describe("thinkingToEffort 함수", () => {
+  it("thinking 값을 effort로 매핑한다", () => {
     expect(thinkingToEffort(undefined)).toBeUndefined();
     expect(thinkingToEffort("off")).toBeUndefined();
     expect(thinkingToEffort("minimal")).toBeUndefined();
@@ -38,8 +38,8 @@ describe("thinkingToEffort", () => {
   });
 });
 
-describe("getCodexModel", () => {
-  it("builds a responses model with account headers", async () => {
+describe("getCodexModel 함수", () => {
+  it("account 헤더를 포함한 responses 모델을 생성한다", async () => {
     resolveCredentialMock.mockResolvedValue({
       kind: "codex",
       creds: { accessToken: "tok", accountId: "acc" },
@@ -55,14 +55,14 @@ describe("getCodexModel", () => {
     );
   });
 
-  it("rejects non-codex credentials", async () => {
+  it("codex가 아닌 credential을 거부한다", async () => {
     resolveCredentialMock.mockResolvedValue({ kind: "apiKey", key: "k" });
     await expect(getCodexModel("gpt-5")).rejects.toThrow("Unreachable: codex credential kind");
   });
 });
 
-describe("getGrokModel", () => {
-  it("builds a chat model with the session key", async () => {
+describe("getGrokModel 함수", () => {
+  it("session key로 chat 모델을 생성한다", async () => {
     resolveCredentialMock.mockResolvedValue({ kind: "grok", creds: { sessionKey: "s" } });
     const out = await getGrokModel("grok-4");
     expect(out).toEqual({ model: "chat:grok-4" });
@@ -71,14 +71,14 @@ describe("getGrokModel", () => {
     );
   });
 
-  it("rejects non-grok credentials", async () => {
+  it("grok이 아닌 credential을 거부한다", async () => {
     resolveCredentialMock.mockResolvedValue({ kind: "apiKey", key: "k" });
     await expect(getGrokModel("grok-4")).rejects.toThrow("Unreachable: grok credential kind");
   });
 });
 
-describe("getBackendModel", () => {
-  it("routes codex and grok providers", async () => {
+describe("getBackendModel 함수", () => {
+  it("codex와 grok provider를 라우팅한다", async () => {
     resolveCredentialMock
       .mockResolvedValueOnce({ kind: "codex", creds: { accessToken: "t", accountId: "a" } })
       .mockResolvedValueOnce({ kind: "grok", creds: { sessionKey: "s" } });
@@ -89,7 +89,7 @@ describe("getBackendModel", () => {
     expect(grok.effort).toBeUndefined();
   });
 
-  it("builds generic providers with and without base URL", async () => {
+  it("base URL 유무에 따라 범용 provider를 생성한다", async () => {
     resolveCredentialMock.mockResolvedValue({ kind: "apiKey", key: "k" });
     delete process.env.OPENAI_BASE_URL;
     const plain = await getBackendModel("openai", "gpt-5");
@@ -103,13 +103,13 @@ describe("getBackendModel", () => {
     delete process.env.OPENAI_BASE_URL;
   });
 
-  it("selects responses transport when api is openai-responses", async () => {
+  it("api가 openai-responses일 때 responses 전송 방식을 선택한다", async () => {
     resolveCredentialMock.mockResolvedValue({ kind: "apiKey", key: "k" });
     const out = await getBackendModel("openai", "gpt-5", undefined, "openai-responses");
     expect(out).toMatchObject({ provider: "openai", modelId: "gpt-5", model: "responses:gpt-5" });
   });
 
-  it("rejects unsupported credential kinds", async () => {
+  it("지원하지 않는 credential 종류를 거부한다", async () => {
     resolveCredentialMock.mockResolvedValue({
       kind: "codex",
       creds: { accessToken: "t", accountId: "a" },
